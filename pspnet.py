@@ -13,7 +13,7 @@ import argparse
 import numpy as np
 from scipy import misc, ndimage
 from keras import backend as K
-from keras.models import model_from_json
+from keras.models import load_model
 import tensorflow as tf
 import layers_builder as layers
 import utils
@@ -30,21 +30,23 @@ EVALUATION_SCALES = [1.0]  # must be all floats!
 class PSPNet(object):
     """Pyramid Scene Parsing Network by Hengshuang Zhao et al 2017."""
 
-    def __init__(self, nb_classes, resnet_layers, input_shape, weights):
+    def __init__(self, nb_classes, resnet_layers, input_shape, weights, checkpoint=None):
         """Instanciate a PSPNet."""
         self.input_shape = input_shape
-        json_path = join("weights", "keras", weights + ".json")
-        h5_path = join("weights", "keras", weights + ".h5")
-        if isfile(json_path) and isfile(h5_path):
-            print("Keras model & weights found, loading...")
-            with open(json_path, 'r') as file_handle:
-                self.model = model_from_json(file_handle.read())
-            self.model.load_weights(h5_path)
+        model_path = join("weights", "keras", weights + ".hdf5")
+
+        if checkpoint is not None:
+            print("Loading from checkpoint %s" % checkpoint)
+            self.model = load_model(checkpoint)
+        elif isfile(model_path):
+            print("Keras model found, loading...")
+            self.model = load_model(model_path)
         else:
-            print("No Keras model & weights found, import from npy weights.")
+            print("No Keras model found, import from npy weights.")
             self.model = layers.build_pspnet(nb_classes=nb_classes,
                                              resnet_layers=resnet_layers,
-                                             input_shape=self.input_shape)
+                                             input_shape=self.input_shape,
+                                             activation="sigmoid")
             self.set_npy_weights(weights)
 
     def predict(self, img, flip_evaluation):
@@ -61,13 +63,7 @@ class PSPNet(object):
         input_data = self.preprocess_image(img)
         # utils.debug(self.model, input_data)
 
-        regular_prediction = self.model.predict(input_data)[0]
-        if flip_evaluation:
-            print("Predict flipped")
-            flipped_prediction = np.fliplr(self.model.predict(np.flip(input_data, axis=2))[0])
-            prediction = (regular_prediction + flipped_prediction)
-        else:
-            prediction = regular_prediction
+        prediction = self.model.predict(input_data)[0]
 
         if img.shape[0:1] != self.input_shape:  # upscale prediction if necessary
             h, w = prediction.shape[:2]
@@ -86,8 +82,7 @@ class PSPNet(object):
     def set_npy_weights(self, weights_path):
         """Set weights from the intermediary npy file."""
         npy_weights_path = join("weights", "npy", weights_path + ".npy")
-        json_path = join("weights", "keras", weights_path + ".json")
-        h5_path = join("weights", "keras", weights_path + ".h5")
+        model_path = join("weights", "keras", weights_path + ".hdf5")
 
         print("Importing weights from %s" % npy_weights_path)
         weights = np.load(npy_weights_path).item()
@@ -125,30 +120,27 @@ class PSPNet(object):
 
         print('Finished importing weights.')
 
-        print("Writing keras model & weights")
-        json_string = self.model.to_json()
-        with open(json_path, 'w') as file_handle:
-            file_handle.write(json_string)
-        self.model.save_weights(h5_path)
+        print("Writing keras model")
+        self.model.save(model_path)
         print("Finished writing Keras model & weights")
 
 
 class PSPNet50(PSPNet):
     """Build a PSPNet based on a 50-Layer ResNet."""
 
-    def __init__(self, nb_classes, weights, input_shape):
+    def __init__(self, nb_classes, weights, input_shape, checkpoint=None):
         """Instanciate a PSPNet50."""
         PSPNet.__init__(self, nb_classes=nb_classes, resnet_layers=50,
-                        input_shape=input_shape, weights=weights)
+                        input_shape=input_shape, weights=weights, checkpoint=checkpoint)
 
 
 class PSPNet101(PSPNet):
     """Build a PSPNet based on a 101-Layer ResNet."""
 
-    def __init__(self, nb_classes, weights, input_shape):
+    def __init__(self, nb_classes, weights, input_shape, checkpoint=None):
         """Instanciate a PSPNet101."""
         PSPNet.__init__(self, nb_classes=nb_classes, resnet_layers=101,
-                        input_shape=input_shape, weights=weights)
+                        input_shape=input_shape, weights=weights, checkpoint=checkpoint)
 
 
 def pad_image(img, target_size):
@@ -245,8 +237,6 @@ if __name__ == "__main__":
     parser.add_argument('--id', default="0")
     parser.add_argument('-s', '--sliding', action='store_true',
                         help="Whether the network should be slided over the original image for prediction.")
-    parser.add_argument('-f', '--flip', action='store_true',
-                        help="Whether the network should predict on both image and flipped image.")
     parser.add_argument('-ms', '--multi_scale', action='store_true',
                         help="Whether the network should predict on multiple scales.")
     args = parser.parse_args()
@@ -277,7 +267,7 @@ if __name__ == "__main__":
         if args.multi_scale:
             EVALUATION_SCALES = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75]  # must be all floats!
 
-        probs = predict_multi_scale(img, pspnet, EVALUATION_SCALES, args.sliding, args.flip)
+        probs = predict_multi_scale(img, pspnet, EVALUATION_SCALES, args.sliding)
 
         print("Writing results...")
 

@@ -219,13 +219,18 @@ def build_pspnet(nb_classes, resnet_layers, input_shape, activation='softmax'):
 
     x = Conv2D(nb_classes, (1, 1), strides=(1, 1), name="conv6")(x)
     x = Lambda(Interp, arguments={'shape': (input_shape[0], input_shape[1])})(x)
-    x = Activation('softmax')(x)
+    x = Activation(activation)(x)
 
     model = Model(inputs=inp, outputs=x)
 
     # Solver
+    if activation is 'softmax':
+        loss = 'categorical_crossentropy'
+    elif activation is 'sigmoid':
+        loss = 'binary_crossentropy'
+
     sgd = SGD(lr=learning_rate, momentum=0.9, nesterov=True)
     model.compile(optimizer=sgd,
-                  loss='categorical_crossentropy',
+                  loss=loss,
                   metrics=['accuracy'])
     return model
