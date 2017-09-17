@@ -1,3 +1,5 @@
+predictions/*
+
 .DS_Store
 *.npy
 *.pyc
