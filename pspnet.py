@@ -17,7 +17,7 @@ from keras.models import load_model
 import tensorflow as tf
 import layers_builder as layers
 import utils
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 __author__ = "Vlad Kryvoruchko, Chaoyue Wang, Jeffrey Hu & Julian Tatsch"
 
@@ -38,9 +38,9 @@ class PSPNet(object):
         if checkpoint is not None:
             print("Loading from checkpoint %s" % checkpoint)
             self.model = load_model(checkpoint)
-        elif isfile(model_path):
-            print("Keras model found, loading...")
-            self.model = load_model(model_path)
+        #elif isfile(model_path):
+        #    print("Keras model found, loading...")
+        #    self.model = load_model(model_path)
         else:
             print("No Keras model found, import from npy weights.")
             self.model = layers.build_pspnet(nb_classes=nb_classes,

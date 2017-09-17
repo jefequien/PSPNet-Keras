@@ -13,7 +13,7 @@ def scale_and_crop_imgs(imgs):
     box = None
     outs = []
     for img in imgs:
-        out = scale_maxside(img, maxside=512)
+        out = scale_maxside(img, maxside=512*3)
         if box is None:
             box = random_crop(out)
         out = crop_array(out, box)

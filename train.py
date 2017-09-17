@@ -24,7 +24,7 @@ def train(net, datasource, checkpoint_dir, initial_epoch=0):
 
     print("Training...")
     net.fit_generator(DataGenerator(datasource), 1000, epochs=100, callbacks=callbacks_list,
-             verbose=1, workers=1, initial_epoch=initial_epoch)
+             verbose=1, workers=6, initial_epoch=initial_epoch)
 
 
 if __name__ == "__main__":
@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
     environ["CUDA_VISIBLE_DEVICES"] = args.id
 
-    project = "local"
+    project = "ade20k"
     config = utils.get_config(project)
     datasource = DataSource(config, random=True)
 
