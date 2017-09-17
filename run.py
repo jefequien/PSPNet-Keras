@@ -1,3 +1,4 @@
+import os
 from os.path import splitext, join, isfile, isdir
 from os import environ, makedirs
 import sys
@@ -7,7 +8,7 @@ import numpy as np
 from keras import backend as K
 import tensorflow as tf
 
-from pspnet import PSPNet50
+from pspnet import PSPNet50, predict_sliding
 from datasource import DataSource
 import image_processor
 import utils
@@ -22,8 +23,7 @@ if __name__ == "__main__":
 
     environ["CUDA_VISIBLE_DEVICES"] = args.id
 
-    project = "ade20k"
-    config = utils.get_config(project)
+    config = utils.get_config(args.project)
     datasource = DataSource(config, random=True)
 
     im_list = datasource.im_list
@@ -32,7 +32,7 @@ if __name__ == "__main__":
         random.shuffle(im_list)
 
     model = os.path.dirname(args.checkpoint)
-    version = os.path.basename(args.weights).split('-')[0]
+    version = os.path.basename(args.checkpoint).split('-')[0]
     root_result = "predictions/{}/{}/".format(model, version)
     print "Outputting to ", root_result
 
@@ -48,7 +48,7 @@ if __name__ == "__main__":
         print(args)
         pspnet = PSPNet50(nb_classes=150, input_shape=(473, 473),
                               weights=model,
-                              checkpoint=checkpoint)
+                              checkpoint=args.checkpoint)
 
         for im in im_list:
             print im
@@ -74,7 +74,7 @@ if __name__ == "__main__":
 
             img = datasource.get_image(im)
             img = image_processor.scale_maxside(img, maxside=512*3)
-            probs = pspnet.predict_sliding_window(img)
+            probs = predict_sliding(img, pspnet, False)
             probs = np.transpose(probs, (2,0,1))
             # probs is 150 x h x w
 
