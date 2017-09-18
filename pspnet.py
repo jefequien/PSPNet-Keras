@@ -49,7 +49,7 @@ class PSPNet(object):
                                              activation="sigmoid")
             self.set_npy_weights(weights)
 
-    def predict(self, img, flip_evaluation):
+    def predict(self, img):
         """
         Predict segementation for an image.
 
@@ -159,7 +159,7 @@ def visualize_prediction(prediction):
     plt.show()
 
 
-def predict_sliding(full_image, net, flip_evaluation):
+def predict_sliding(full_image, net):
     """Predict on tiles of exactly the network input shape so nothing gets squeezed."""
     tile_size = net.input_shape
     classes = net.model.outputs[0].shape[3]
@@ -187,7 +187,7 @@ def predict_sliding(full_image, net, flip_evaluation):
             # plt.show()
             tile_counter += 1
             print("Predicting tile %i" % tile_counter)
-            padded_prediction = net.predict(padded_img, flip_evaluation)
+            padded_prediction = net.predict(padded_img)
             prediction = padded_prediction[0:img.shape[0], 0:img.shape[1], :]
             count_predictions[y1:y2, x1:x2] += 1
             full_probs[y1:y2, x1:x2] += prediction  # accumulate the predictions also in the overlapping regions
@@ -200,7 +200,7 @@ def predict_sliding(full_image, net, flip_evaluation):
     return full_probs
 
 
-def predict_multi_scale(full_image, net, scales, sliding_evaluation, flip_evaluation):
+def predict_multi_scale(full_image, net, scales, sliding_evaluation):
     """Predict an image by looking at it with different scales."""
     classes = net.model.outputs[0].shape[3]
     full_probs = np.zeros((full_image.shape[0], full_image.shape[1], classes))
@@ -209,9 +209,9 @@ def predict_multi_scale(full_image, net, scales, sliding_evaluation, flip_evalua
         print("Predicting image scaled by %f" % scale)
         scaled_img = misc.imresize(full_image, size=scale, interp="bilinear")
         if sliding_evaluation:
-            scaled_probs = predict_sliding(scaled_img, net, flip_evaluation)
+            scaled_probs = predict_sliding(scaled_img, net)
         else:
-            scaled_probs = net.predict(scaled_img, flip_evaluation)
+            scaled_probs = net.predict(scaled_img)
         # scale probs up to full size
         h, w = scaled_probs.shape[:2]
         probs = ndimage.zoom(scaled_probs, (1.*h_ori/h, 1.*w_ori/w, 1.),  # FIXME: must scale up exactly to full_image.shape
@@ -267,7 +267,8 @@ if __name__ == "__main__":
         if args.multi_scale:
             EVALUATION_SCALES = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75]  # must be all floats!
 
-        probs = predict_multi_scale(img, pspnet, EVALUATION_SCALES, args.sliding)
+        #probs = predict_multi_scale(img, pspnet, EVALUATION_SCALES, args.sliding)
+        probs = predict_sliding(img, pspnet)
 
         print("Writing results...")
 

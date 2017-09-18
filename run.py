@@ -4,6 +4,8 @@ from os import environ, makedirs
 import sys
 import argparse
 import numpy as np
+import h5py
+from scipy import misc
 
 from keras import backend as K
 import tensorflow as tf
@@ -73,20 +75,21 @@ if __name__ == "__main__":
                 os.makedirs(os.path.dirname(fn_allprob))
 
             img = datasource.get_image(im)
-            img = image_processor.scale_maxside(img, maxside=512*3)
-            probs = predict_sliding(img, pspnet, False)
+            scaled_img = image_processor.scale_maxside(img, maxside=512)
+            scaled_probs = predict_sliding(scaled_img, pspnet, False)
+            probs = image_processor.scale(scaled_probs, img.shape)
             probs = np.transpose(probs, (2,0,1))
             # probs is 150 x h x w
 
             # calculate output
-            pred_mask = np.argmax(probs, axis=0) + 1
-            prob_mask = np.max(probs, axis=0)
+            pred_mask = np.array(np.argmax(probs, axis=0) + 1, dtype='uint8')
+            prob_mask = np.array(np.max(probs, axis=0)*255, dtype='uint8')
             max_prob = np.max(probs, axis=(1,2))
             all_prob = np.array(probs*255, dtype='uint8')
 
             # write to file
-            misc.imsave(fn_mask, pred_mask.astype('uint8'))
-            misc.imsave(fn_prob, (prob_mask*255).astype('uint8'))
+            misc.imsave(fn_mask, pred_mask)
+            misc.imsave(fn_prob, prob_mask)
             with h5py.File(fn_maxprob, 'w') as f:
                 f.create_dataset('maxprob', data=max_prob)
             with h5py.File(fn_allprob, 'w') as f:
