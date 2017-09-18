@@ -13,7 +13,7 @@ def scale_and_crop_imgs(imgs):
     box = None
     outs = []
     for img in imgs:
-        out = scale_maxside(img, maxside=512*3)
+        out = scale_maxside(img, maxside=512)
         if box is None:
             box = random_crop(out)
         out = crop_array(out, box)
@@ -68,6 +68,9 @@ def scale(a, shape):
 
     if np.ndim(a) == 3 and a.shape[2] == 3:
         # Image, use bilinear
+        return ndimage.zoom(a, (r_h,r_w,1.), order=1, prefilter=False)
+    elif np.ndim(a) == 3 and a.dtype == 'float32':
+        # Probs, use bilinear
         return ndimage.zoom(a, (r_h,r_w,1.), order=1, prefilter=False)
     else:
         # Ground truth, use nearest

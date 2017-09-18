@@ -46,7 +46,7 @@ class PSPNet(object):
             self.model = layers.build_pspnet(nb_classes=nb_classes,
                                              resnet_layers=resnet_layers,
                                              input_shape=self.input_shape,
-                                             activation="sigmoid")
+                                             activation="softmax")#"sigmoid")
             self.set_npy_weights(weights)
 
     def predict(self, img, flip_evaluation):
