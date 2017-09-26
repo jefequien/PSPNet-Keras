@@ -69,6 +69,9 @@ def scale(a, shape):
     if np.ndim(a) == 3 and a.shape[2] == 3:
         # Image, use bilinear
         return ndimage.zoom(a, (r_h,r_w,1.), order=1, prefilter=False)
+    elif np.ndim(a) == 3 and a.dtype == 'float32':
+        # Probs, use bilinear
+        return ndimage.zoom(a, (r_h,r_w,1.), order=1, prefilter=False)
     else:
         # Ground truth, use nearest
         if np.ndim(a) == 2:

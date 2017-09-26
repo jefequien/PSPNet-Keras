@@ -19,7 +19,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", '--project', type=str, required=True, help="Project name")
     parser.add_argument("-r", '--randomize', action='store_true', default=False, help="Randomize image list")
-    parser.add_argument('-c', '--checkpoint', type=str, required=True, help='Checkpoint to use')
+    parser.add_argument('-c', '--checkpoint', type=str, help='Checkpoint to use')
     parser.add_argument('--id', default="0")
     args = parser.parse_args()
 
@@ -48,9 +48,8 @@ if __name__ == "__main__":
 
     with sess.as_default():
         print(args)
-        pspnet = PSPNet50(nb_classes=150, input_shape=(473, 473),
-                              weights=model,
-                              checkpoint=args.checkpoint)
+        pspnet = PSPNet50(activation="softmax",
+                            checkpoint=args.checkpoint)
 
         for im in im_list:
             print im
@@ -75,9 +74,10 @@ if __name__ == "__main__":
                 os.makedirs(os.path.dirname(fn_allprob))
 
             img = datasource.get_image(im)
-            scaled_img = image_processor.scale_maxside(img, maxside=512)
-            scaled_probs = predict_sliding(scaled_img, pspnet, False)
-            probs = image_processor.scale(scaled_probs, img.shape)
+            probs = predict_sliding(img, pspnet)
+            #scaled_img = image_processor.scale_maxside(img, maxside=512)
+            #scaled_probs = predict_sliding(scaled_img, pspnet)
+            #probs = image_processor.scale(scaled_probs, img.shape)
             probs = np.transpose(probs, (2,0,1))
             # probs is 150 x h x w
 
@@ -85,8 +85,8 @@ if __name__ == "__main__":
             pred_mask = np.array(np.argmax(probs, axis=0) + 1, dtype='uint8')
             prob_mask = np.array(np.max(probs, axis=0)*255, dtype='uint8')
             max_prob = np.max(probs, axis=(1,2))
-            all_prob = np.array(probs*255, dtype='uint8')
-
+            #all_prob = np.array(probs*255+0.5, dtype='uint8')
+            all_prob = probs
             # write to file
             misc.imsave(fn_mask, pred_mask)
             misc.imsave(fn_prob, prob_mask)

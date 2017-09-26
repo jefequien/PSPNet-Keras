@@ -24,30 +24,33 @@ __author__ = "Vlad Kryvoruchko, Chaoyue Wang, Jeffrey Hu & Julian Tatsch"
 
 # These are the means for the ImageNet pretrained ResNet
 DATA_MEAN = np.array([[[123.68, 116.779, 103.939]]])  # RGB order
-EVALUATION_SCALES = [1.0]  # must be all floats!
 
 
 class PSPNet(object):
     """Pyramid Scene Parsing Network by Hengshuang Zhao et al 2017."""
 
-    def __init__(self, nb_classes, resnet_layers, input_shape, weights, checkpoint=None):
+    def __init__(self, params, checkpoint=None):
+        print(params)
+        print(checkpoint)
         """Instanciate a PSPNet."""
-        self.input_shape = input_shape
-        model_path = join("weights", "keras", weights + ".hdf5")
+        self.input_shape = params['input_shape']
 
         if checkpoint is not None:
             print("Loading from checkpoint %s" % checkpoint)
             self.model = load_model(checkpoint)
-        #elif isfile(model_path):
-        #    print("Keras model found, loading...")
-        #    self.model = load_model(model_path)
         else:
-            print("No Keras model found, import from npy weights.")
-            self.model = layers.build_pspnet(nb_classes=nb_classes,
-                                             resnet_layers=resnet_layers,
-                                             input_shape=self.input_shape,
-                                             activation="sigmoid")
-            self.set_npy_weights(weights)
+            # Load cached keras model
+            model_path = join("weights", "keras", params['name'] + "_" + params['activation'] + ".hdf5")
+            if isfile(model_path):
+               print("Keras model found, loading...")
+               self.model = load_model(model_path)
+            else:
+                print("No Keras model found, import from npy weights.")
+                self.model = layers.build_pspnet(nb_classes=params['nb_classes'],
+                                                 resnet_layers=params['resnet_layers'],
+                                                 input_shape=params['input_shape'],
+                                                 activation=params['activation'])
+                self.set_npy_weights(params['name'], model_path)
 
     def predict(self, img):
         """
@@ -79,10 +82,9 @@ class PSPNet(object):
         input_data = bgr_image[np.newaxis, :, :, :]  # Append sample dimension for keras
         return input_data
 
-    def set_npy_weights(self, weights_path):
+    def set_npy_weights(self, name, output_path):
         """Set weights from the intermediary npy file."""
-        npy_weights_path = join("weights", "npy", weights_path + ".npy")
-        model_path = join("weights", "keras", weights_path + ".hdf5")
+        npy_weights_path = join("weights", "npy", name + ".npy")
 
         print("Importing weights from %s" % npy_weights_path)
         weights = np.load(npy_weights_path).item()
@@ -121,26 +123,34 @@ class PSPNet(object):
         print('Finished importing weights.')
 
         print("Writing keras model")
-        self.model.save(model_path)
+        self.model.save(output_path)
         print("Finished writing Keras model & weights")
 
 
 class PSPNet50(PSPNet):
     """Build a PSPNet based on a 50-Layer ResNet."""
 
-    def __init__(self, nb_classes, weights, input_shape, checkpoint=None):
+    def __init__(self, nb_classes=150, name="pspnet50", input_shape=(473, 473), activation="softmax", checkpoint=None):
         """Instanciate a PSPNet50."""
-        PSPNet.__init__(self, nb_classes=nb_classes, resnet_layers=50,
-                        input_shape=input_shape, weights=weights, checkpoint=checkpoint)
+        params = {'nb_classes': nb_classes,
+                    'input_shape': input_shape,
+                    'name': name,
+                    'resnet_layers': 50,
+                    'activation': activation}
+        PSPNet.__init__(self, params, checkpoint=checkpoint)
 
 
 class PSPNet101(PSPNet):
     """Build a PSPNet based on a 101-Layer ResNet."""
 
-    def __init__(self, nb_classes, weights, input_shape, checkpoint=None):
+    def __init__(self, nb_classes, name, input_shape, activation="softmax", checkpoint=None):
         """Instanciate a PSPNet101."""
-        PSPNet.__init__(self, nb_classes=nb_classes, resnet_layers=101,
-                        input_shape=input_shape, weights=weights, checkpoint=checkpoint)
+        params = {'nb_classes': nb_classes,
+                    'input_shape': input_shape,
+                    'name': name,
+                    'resnet_layers': 101,
+                    'activation': activation}
+        PSPNet.__init__(self, params, checkpoint=checkpoint)
 
 
 def pad_image(img, target_size):
@@ -200,29 +210,6 @@ def predict_sliding(full_image, net):
     return full_probs
 
 
-def predict_multi_scale(full_image, net, scales, sliding_evaluation):
-    """Predict an image by looking at it with different scales."""
-    classes = net.model.outputs[0].shape[3]
-    full_probs = np.zeros((full_image.shape[0], full_image.shape[1], classes))
-    h_ori, w_ori = full_image.shape[:2]
-    for scale in scales:
-        print("Predicting image scaled by %f" % scale)
-        scaled_img = misc.imresize(full_image, size=scale, interp="bilinear")
-        if sliding_evaluation:
-            scaled_probs = predict_sliding(scaled_img, net)
-        else:
-            scaled_probs = net.predict(scaled_img)
-        # scale probs up to full size
-        h, w = scaled_probs.shape[:2]
-        probs = ndimage.zoom(scaled_probs, (1.*h_ori/h, 1.*w_ori/w, 1.),  # FIXME: must scale up exactly to full_image.shape
-                             order=1, prefilter=False)
-        # visualize_prediction(probs)
-        # integrate probs over all scales
-        full_probs += probs
-    full_probs /= len(scales)
-    return full_probs
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--model', type=str, default='pspnet50_ade20k',
@@ -237,8 +224,6 @@ if __name__ == "__main__":
     parser.add_argument('--id', default="0")
     parser.add_argument('-s', '--sliding', action='store_true',
                         help="Whether the network should be slided over the original image for prediction.")
-    parser.add_argument('-ms', '--multi_scale', action='store_true',
-                        help="Whether the network should predict on multiple scales.")
     args = parser.parse_args()
 
     environ["CUDA_VISIBLE_DEVICES"] = args.id
@@ -252,23 +237,21 @@ if __name__ == "__main__":
 
         if "pspnet50" in args.model:
             pspnet = PSPNet50(nb_classes=150, input_shape=(473, 473),
-                              weights=args.model)
+                              name=args.model)
         elif "pspnet101" in args.model:
             if "cityscapes" in args.model:
                 pspnet = PSPNet101(nb_classes=19, input_shape=(713, 713),
-                                   weights=args.model)
+                                   name=args.model)
             if "voc2012" in args.model:
                 pspnet = PSPNet101(nb_classes=21, input_shape=(473, 473),
-                                   weights=args.model)
-
+                                   name=args.model)
         else:
             print("Network architecture not implemented.")
 
-        if args.multi_scale:
-            EVALUATION_SCALES = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75]  # must be all floats!
-
-        #probs = predict_multi_scale(img, pspnet, EVALUATION_SCALES, args.sliding)
-        probs = predict_sliding(img, pspnet)
+        if args.sliding:
+            probs = predict_sliding(img, pspnet)
+        else:
+            probs = pspnet.predict(img)
 
         print("Writing results...")
 

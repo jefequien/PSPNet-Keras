@@ -205,7 +205,7 @@ def build_pyramid_pooling_module(res, input_shape):
 
 def build_pspnet(nb_classes, resnet_layers, input_shape, activation='softmax'):
     """Build PSPNet."""
-    print("Building a PSPNet based on ResNet %i expecting inputs of shape %s predicting %i classes" % (resnet_layers, input_shape, nb_classes))
+    print("Building a PSPNet based on ResNet %i expecting inputs of shape %s predicting %i classes with activation %s" % (resnet_layers, input_shape, nb_classes, activation))
 
     inp = Input((input_shape[0], input_shape[1], 3))
     res = ResNet(inp, layers=resnet_layers)
