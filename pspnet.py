@@ -30,8 +30,8 @@ class PSPNet(object):
     """Pyramid Scene Parsing Network by Hengshuang Zhao et al 2017."""
 
     def __init__(self, params, checkpoint=None):
-        print(params)
-        print(checkpoint)
+        print("params %s" % params)
+        print("checkpoint %s" % checkpoint)
         """Instanciate a PSPNet."""
         self.input_shape = params['input_shape']
 
@@ -42,7 +42,7 @@ class PSPNet(object):
             # Load cached keras model
             model_path = join("weights", "keras", params['name'] + "_" + params['activation'] + ".hdf5")
             if isfile(model_path):
-               print("Keras model found, loading...")
+               print("Cached Keras model found, loading %s" % model_path)
                self.model = load_model(model_path)
             else:
                 print("No Keras model found, import from npy weights.")
@@ -130,7 +130,7 @@ class PSPNet(object):
 class PSPNet50(PSPNet):
     """Build a PSPNet based on a 50-Layer ResNet."""
 
-    def __init__(self, nb_classes=150, name="pspnet50", input_shape=(473, 473), activation="softmax", checkpoint=None):
+    def __init__(self, nb_classes=150, name="pspnet50_ade20k", input_shape=(473, 473), activation="softmax", checkpoint=None):
         """Instanciate a PSPNet50."""
         params = {'nb_classes': nb_classes,
                     'input_shape': input_shape,

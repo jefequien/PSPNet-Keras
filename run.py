@@ -42,11 +42,11 @@ if __name__ == "__main__":
     params['activation'] = 'softmax'
 
     # Output directory
-    root_result = "predictions/tmp/{}".format(params['activation'])
+    root_result = "predictions/tmp/{}/{}".format(params['activation'], args.scale)
     if args.checkpoint is not None:
         model = os.path.dirname(args.checkpoint)
         version = os.path.basename(args.checkpoint).split('-')[0]
-        root_result = "predictions/{}/{}/".format(model, version)
+        root_result = "predictions/{}/{}/{}".format(model, version, args.scale)
     print "Outputting to ", root_result
 
     root_mask = os.path.join(root_result, 'category_mask')
@@ -85,13 +85,14 @@ if __name__ == "__main__":
                 os.makedirs(os.path.dirname(fn_allprob))
 
             img = datasource.get_image(im)
-            if args.scale is "single":
+            probs = None
+            if args.scale == "single":
                 probs = pspnet.predict(img)
-            elif args.scale is "normal":
+            elif args.scale == "normal":
                 img_s = image_processor.scale_maxside(img, maxside=512)
                 probs_s = predict_sliding(img_s, pspnet)
                 probs = image_processor.scale(probs_s, img.shape)
-            elif args.scale is "big":
+            elif args.scale == "big":
                 # probs = predict_sliding(img, pspnet)
                 raise
 
