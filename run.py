@@ -33,9 +33,15 @@ if __name__ == "__main__":
         random.seed(3)
         random.shuffle(im_list)
 
-    model = os.path.dirname(args.checkpoint)
-    version = os.path.basename(args.checkpoint).split('-')[0]
-    root_result = "predictions/{}/{}/".format(model, version)
+    params = {}
+    params['activation'] = 'softmax'
+
+    # Output directory
+    root_result = "predictions/tmp/{}".format(params['activation'])
+    if args.checkpoint is not None:
+        model = os.path.dirname(args.checkpoint)
+        version = os.path.basename(args.checkpoint).split('-')[0]
+        root_result = "predictions/{}/{}/".format(model, version)
     print "Outputting to ", root_result
 
     root_mask = os.path.join(root_result, 'category_mask')
@@ -48,7 +54,7 @@ if __name__ == "__main__":
 
     with sess.as_default():
         print(args)
-        pspnet = PSPNet50(activation="softmax",
+        pspnet = PSPNet50(activation=params['activation'],
                             checkpoint=args.checkpoint)
 
         for im in im_list:
