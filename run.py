@@ -20,6 +20,11 @@ if __name__ == "__main__":
     parser.add_argument("-p", '--project', type=str, required=True, help="Project name")
     parser.add_argument("-r", '--randomize', action='store_true', default=False, help="Randomize image list")
     parser.add_argument('-c', '--checkpoint', type=str, help='Checkpoint to use')
+    parser.add_argument('-s', '--scale', type=str, default='normal',
+                        help='Scale to use',
+                        choices=['normal',
+                                 'big',
+                                 'single'])
     parser.add_argument('--id', default="0")
     args = parser.parse_args()
 
@@ -80,14 +85,20 @@ if __name__ == "__main__":
                 os.makedirs(os.path.dirname(fn_allprob))
 
             img = datasource.get_image(im)
-            probs = predict_sliding(img, pspnet)
-            #scaled_img = image_processor.scale_maxside(img, maxside=512)
-            #scaled_probs = predict_sliding(scaled_img, pspnet)
-            #probs = image_processor.scale(scaled_probs, img.shape)
-            probs = np.transpose(probs, (2,0,1))
-            # probs is 150 x h x w
+            if args.scale is "single":
+                probs = pspnet.predict(img)
+            elif args.scale is "normal":
+                img_s = image_processor.scale_maxside(img, maxside=512)
+                probs_s = predict_sliding(img_s, pspnet)
+                probs = image_processor.scale(probs_s, img.shape)
+            elif args.scale is "big":
+                # probs = predict_sliding(img, pspnet)
+                raise
 
-            # calculate output
+            # probs is 150 x h x w
+            probs = np.transpose(probs, (2,0,1))
+
+            # Write output
             pred_mask = np.array(np.argmax(probs, axis=0) + 1, dtype='uint8')
             prob_mask = np.array(np.max(probs, axis=0)*255, dtype='uint8')
             max_prob = np.max(probs, axis=(1,2))
