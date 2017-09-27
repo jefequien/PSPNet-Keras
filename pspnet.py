@@ -84,7 +84,7 @@ class PSPNet(object):
         predictions = []
         batch_size = 8
         for i in range(0, n, batch_size):
-            print("Predicting tiles %i to %i" % (i, min(i + batch_size, n)) - 1)
+            print("Predicting tiles %i to %i" % (i, min(i + batch_size, n) - 1))
             batch = input_data[i:i + batch_size]
             predictions.append(self.model.predict(batch))
         prediction = np.concatenate(predictions, axis=0)

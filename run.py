@@ -23,6 +23,7 @@ if __name__ == "__main__":
     parser.add_argument('-s', '--scale', type=str, default='normal',
                         help='Scale to use',
                         choices=['normal',
+                                 'medium',
                                  'big',
                                  'single'])
     parser.add_argument('--id', default="0")
@@ -42,7 +43,7 @@ if __name__ == "__main__":
     params['activation'] = 'softmax'
 
     # Output directory
-    root_result = "predictions/tmp/{}/{}".format(params['activation'], args.scale)
+    root_result = "predictions/default/{}/{}".format(params['activation'], args.scale)
     if args.checkpoint is not None:
         model = os.path.dirname(args.checkpoint)
         version = os.path.basename(args.checkpoint).split('-')[0]
@@ -92,8 +93,12 @@ if __name__ == "__main__":
                 img_s = image_processor.scale_maxside(img, maxside=512)
                 probs_s = pspnet.predict_sliding(img_s)
                 probs = image_processor.scale(probs_s, img.shape)
+            elif args.scale == "medium":
+                img_s = image_processor.scale_maxside(img, maxside=1028)
+                probs_s = pspnet.predict_sliding(img_s)
+                probs = image_processor.scale(probs_s, img.shape)
             elif args.scale == "big":
-                img_s = image_processor.scale_maxside(img, maxside=1024)
+                img_s = image_processor.scale_maxside(img, maxside=2048)
                 probs_s = pspnet.predict_sliding(img_s)
                 probs = image_processor.scale(probs_s, img.shape)
 
@@ -104,8 +109,8 @@ if __name__ == "__main__":
             pred_mask = np.array(np.argmax(probs, axis=0) + 1, dtype='uint8')
             prob_mask = np.array(np.max(probs, axis=0)*255, dtype='uint8')
             max_prob = np.max(probs, axis=(1,2))
-            #all_prob = np.array(probs*255+0.5, dtype='uint8')
-            all_prob = probs
+            all_prob = np.array(probs*255+0.5, dtype='uint8')
+            #all_prob = probs
             # write to file
             misc.imsave(fn_mask, pred_mask)
             misc.imsave(fn_prob, prob_mask)
