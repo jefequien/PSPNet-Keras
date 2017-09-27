@@ -93,8 +93,9 @@ if __name__ == "__main__":
                 probs_s = pspnet.predict_sliding(img_s)
                 probs = image_processor.scale(probs_s, img.shape)
             elif args.scale == "big":
-                # probs = predict_sliding(img, pspnet)
-                raise
+                img_s = image_processor.scale_maxside(img, maxside=1024)
+                probs_s = pspnet.predict_sliding(img_s)
+                probs = image_processor.scale(probs_s, img.shape)
 
             # probs is 150 x h x w
             probs = np.transpose(probs, (2,0,1))

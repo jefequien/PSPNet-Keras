@@ -84,7 +84,7 @@ class PSPNet(object):
         predictions = []
         batch_size = 8
         for i in range(0, n, batch_size):
-            print("Predicting tiles %i to %i" % (i, min(i + batch_size, n)))
+            print("Predicting tiles %i to %i" % (i, min(i + batch_size, n)) - 1)
             batch = input_data[i:i + batch_size]
             predictions.append(self.model.predict(batch))
         prediction = np.concatenate(predictions, axis=0)
@@ -102,7 +102,6 @@ class PSPNet(object):
         stride_rate = 2./3
         input_data = self.preprocess_image(img)
         input_data = image_processor.build_sliding_window(img, stride_rate, input_shape=self.input_shape)
-        print(input_data.shape)
         return input_data
 
     def postprocess_sliding_image(self, img, prediction):
