@@ -66,33 +66,6 @@ def sliding_window_tiles(img, stride_rate, tile_size=473):
         boxes.append(box)
     return boxes
 
-
-#####
-
-def scale_and_crop_imgs(imgs):
-    '''
-    Scales and returns a random crop of images
-    '''
-    box = None
-    outs = []
-    for img in imgs:
-        out = scale_maxside(img, maxside=512)
-        if box is None:
-            box = random_crop(out)
-        out = crop_array(out, box)
-        outs.append(out)
-    return outs
-
-def scale_imgs(imgs):
-    '''
-    Scale to 473x473
-    '''
-    outs = []
-    for img in imgs:
-        out = scale(img, (INPUT_SIZE,INPUT_SIZE))
-        outs.append(out)
-    return outs
-
 def crop_array(a, box):
     h,w,c = a.shape
     sh,eh,sw,ew = box
@@ -102,7 +75,6 @@ def crop_array(a, box):
 
 def random_crop(img):
     h,w,_ = img.shape
-
     sh = 0
     sw = 0
     if h > INPUT_SIZE:

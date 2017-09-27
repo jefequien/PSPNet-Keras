@@ -4,7 +4,7 @@ import threading
 import numpy as np
 from scipy import misc
 
-import image_processor
+from image_processor import *
 import utils
 from datasource import DataSource
 
@@ -34,39 +34,47 @@ def threadsafe_generator(f):
     return g
 
 @threadsafe_generator
-def DataGenerator(datasource):
+def DataGenerator(datasource, maxside=None):
     while True:
-        # t = time.time()
         im = datasource.next_im()
         img = datasource.get_image(im)
+        img = datasource.preprocess_image(img)
         gt = datasource.get_ground_truth(im)
-        outs = image_processor.scale_and_crop_imgs([img, gt])
 
-        data = outs[0]
-        label = outs[1]
+        if maxside is None:
+            img_s = scale(img, (473,473))
+            gt_s = scale(gt, (473,473))
+        else:
+            img_s = scale_maxside(img, maxside=maxside)
+            gt_s = scale_maxside(gt, maxside=maxside)
+        
+        box = random_crop(img_s)
+        data = crop_array(img_s, box)
+        label = crop_array(gt_s, box)
 
         # Batch size of 1
         data = data[np.newaxis, ...]
         label = label[np.newaxis, ...]
-
-        #print time.time() - t
-        yield (data,label)
+        yield (data, label)
 
 
 if __name__ == "__main__":
-
     project = "local"
     config = utils.get_config(project)
     datasource = DataSource(config, random=True)
-    generator = DataGenerator(datasource)
+    generator = DataGenerator(datasource, maxside=512)
 
     data, label = generator.next()
     print data.shape
     print label.shape
 
     data = data[0]
-    label = np.argmax(label[0], axis=2)
-    label = utils.add_color(label)
+    label = label[0]
+
+    unlabeled = np.max(label, axis=2) == 0
+    gt = np.argmax(label, axis=2) + 1
+    gt[unlabeled] = 0
+    gt = utils.add_color(gt)
 
     misc.imsave("data.png", data)
-    misc.imsave("label.png", label)
+    misc.imsave("label.png", gt)

@@ -35,13 +35,14 @@ class DataSource:
         img = misc.imread(img_path)
         if img.ndim != 3:
             img = np.stack((img,img,img), axis=2)
-
-        # Preprocess
-        img = img - DATA_MEAN
-        # RGB => BGR
-        img = img[:,:,::-1]
-        img = img.astype('float32')
         return img
+
+    def preprocess_image(self, img):
+        """Preprocess an image as input."""
+        float_img = img.astype('float16')
+        centered_image = float_img - DATA_MEAN
+        bgr_image = centered_image[:, :, ::-1]  # RGB => BGR
+        return bgr_image
 
     def get_ground_truth(self, im):
         gt_path = os.path.join(self.ground_truth_dir, im.replace('.jpg', '.png'))
