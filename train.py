@@ -23,7 +23,7 @@ def train(pspnet, data_generator, checkpoint_dir, initial_epoch=0):
     callbacks_list = [checkpoint]
 
     print("Training...")
-    pspnet.model.fit_generator(data_generator, 100, epochs=100, callbacks=callbacks_list,
+    pspnet.model.fit_generator(data_generator, 1000, epochs=100, callbacks=callbacks_list,
              verbose=1, workers=6, initial_epoch=initial_epoch)
 
 
@@ -59,7 +59,7 @@ if __name__ == "__main__":
 
     with sess.as_default():
         print(args)
-        pspnet = PSPNet50(activation="softmax",
+        pspnet = PSPNet50(activation="sigmoid",
                             checkpoint=checkpoint)
 
         if args.scale == "normal":
@@ -71,7 +71,7 @@ if __name__ == "__main__":
         else:
             maxside = None
 
-        data_generator = DataGenerator(datasource, pspnet, maxside=maxside)
+        data_generator = DataGenerator(datasource, maxside=maxside)
         train(pspnet, data_generator, checkpoint_dir, initial_epoch=epoch)
 
 
