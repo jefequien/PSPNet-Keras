@@ -17,6 +17,7 @@ from keras.models import load_model
 import tensorflow as tf
 import layers_builder as layers
 import utils
+import image_processor
 #import matplotlib.pyplot as plt
 
 __author__ = "Vlad Kryvoruchko, Chaoyue Wang, Jeffrey Hu & Julian Tatsch"
@@ -64,6 +65,7 @@ class PSPNet(object):
             print("Input %s not fitting for network size %s, resizing. You may want to try sliding prediction for better results." % (img.shape[0:2], self.input_shape))
             img = misc.imresize(img, self.input_shape)
         input_data = self.preprocess_image(img)
+        input_data = input_data[np.newaxis, :, :, :]  # Append sample dimension for keras
         # utils.debug(self.model, input_data)
 
         prediction = self.model.predict(input_data)[0]
@@ -74,13 +76,39 @@ class PSPNet(object):
                                       order=1, prefilter=False)
         return prediction
 
+    def predict_sliding(self, img):
+        input_data = self.preprocess_sliding_image(img)
+        n = input_data.shape[0]
+        print("Needs %i prediction tiles" % n)
+
+        predictions = []
+        batch_size = 8
+        for i in range(0, n, batch_size):
+            print("Predicting tiles %i to %i" % (i, min(i + batch_size, n)))
+            batch = input_data[i:i + batch_size]
+            predictions.append(self.model.predict(batch))
+        prediction = np.concatenate(predictions, axis=0)
+        prediction = self.postprocess_sliding_image(img, prediction)
+        return prediction
+
     def preprocess_image(self, img):
         """Preprocess an image as input."""
         float_img = img.astype('float16')
         centered_image = float_img - DATA_MEAN
         bgr_image = centered_image[:, :, ::-1]  # RGB => BGR
-        input_data = bgr_image[np.newaxis, :, :, :]  # Append sample dimension for keras
+        return bgr_image
+
+    def preprocess_sliding_image(self, img):
+        stride_rate = 2./3
+        input_data = self.preprocess_image(img)
+        input_data = image_processor.build_sliding_window(img, stride_rate, input_shape=self.input_shape)
+        print(input_data.shape)
         return input_data
+
+    def postprocess_sliding_image(self, img, prediction):
+        stride_rate = 2./3
+        prediction = image_processor.assemble_sliding_window_probs(img, stride_rate, prediction)
+        return prediction
 
     def set_npy_weights(self, name, output_path):
         """Set weights from the intermediary npy file."""
@@ -168,7 +196,6 @@ def visualize_prediction(prediction):
     plt.imshow(color_cm)
     plt.show()
 
-
 def predict_sliding(full_image, net):
     """Predict on tiles of exactly the network input shape so nothing gets squeezed."""
     tile_size = net.input_shape
@@ -249,7 +276,8 @@ if __name__ == "__main__":
             print("Network architecture not implemented.")
 
         if args.sliding:
-            probs = predict_sliding(img, pspnet)
+            probs = pspnet.predict_sliding(img)
+            # probs = predict_sliding(img, pspnet)
         else:
             probs = pspnet.predict(img)
 

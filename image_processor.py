@@ -6,6 +6,70 @@ import cv2
 
 INPUT_SIZE = 473
 
+def build_sliding_window(img, stride_rate, input_shape=(473,473)):
+    '''
+    Returns sliding window patches as a batch.
+    '''
+    h,w = img.shape[:2]
+    crop_boxes = sliding_window_tiles(img, stride_rate)
+    n = len(crop_boxes)
+
+    crops = np.zeros((n, input_shape[0], input_shape[1], 3))
+    for i in xrange(n):
+        box = crop_boxes[i]
+        crops[i] = crop_array(img, box)
+    return crops
+
+def assemble_sliding_window_tiles(img, stride_rate, tiles):
+    '''
+    Combines sliding window predictions into one image
+    '''
+    h, w = img.shape[:2]
+    n, h_t, w_t, k = tiles.shape
+
+    probs = np.zeros((h, w, k), dtype=np.float32)
+    cnts = np.zeros((h,w,1))
+
+    boxes = sliding_window_tiles(img, stride_rate, tile_size=h_t)
+    n = len(boxes)
+    for i in xrange(n):
+        sh,eh,sw,ew = boxes[i]
+        crop_prob = crop_probs[i]
+
+        probs[sh:eh,sw:ew,:] += crop_prob[0:eh-sh,0:ew-sw,:]
+        cnts[sh:eh,sw:ew,0] += 1
+
+    assert cnts.min()>=1
+    probs /= cnts
+    assert (probs.min()>=0 and probs.max()<=1), '%f,%f'%(probs.min(),probs.max())
+    return probs
+
+def sliding_window_tiles(img, stride_rate, tile_size=473):
+    '''
+    Sliding window crop box locations
+    '''
+    # Get top-left corners
+    h, w = img.shape[:2]
+    stride = tile_size * stride_rate
+
+    hs_upper = max(1,h-(tile_size-stride))
+    ws_upper = max(1,w-(tile_size-stride))
+    hs = np.arange(0,hs_upper,stride, dtype=int)
+    ws = np.arange(0,ws_upper,stride, dtype=int)
+    crop_locs = list(itertools.product(hs,ws))
+
+    boxes = []
+    for loc in crop_locs:
+        sh,sw = loc
+        eh = min(h, sh + INPUT_SIZE)
+        ew = min(w, sw + INPUT_SIZE)
+        box = (sh,eh,sw,ew)
+        boxes.append(box)
+    return boxes
+
+
+#####
+
 def scale_and_crop_imgs(imgs):
     '''
     Scales and returns a random crop of images
