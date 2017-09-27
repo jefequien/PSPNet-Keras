@@ -107,7 +107,7 @@ class PSPNet(object):
 
     def postprocess_sliding_image(self, img, prediction):
         stride_rate = 2./3
-        prediction = image_processor.assemble_sliding_window_probs(img, stride_rate, prediction)
+        prediction = image_processor.assemble_sliding_window_tiles(img, stride_rate, prediction)
         return prediction
 
     def set_npy_weights(self, name, output_path):

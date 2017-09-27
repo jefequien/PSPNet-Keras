@@ -90,7 +90,7 @@ if __name__ == "__main__":
                 probs = pspnet.predict(img)
             elif args.scale == "normal":
                 img_s = image_processor.scale_maxside(img, maxside=512)
-                probs_s = predict_sliding(img_s, pspnet)
+                probs_s = pspnet.predict_sliding(img_s)
                 probs = image_processor.scale(probs_s, img.shape)
             elif args.scale == "big":
                 # probs = predict_sliding(img, pspnet)

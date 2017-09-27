@@ -11,14 +11,14 @@ def build_sliding_window(img, stride_rate, input_shape=(473,473)):
     Returns sliding window patches as a batch.
     '''
     h,w = img.shape[:2]
-    crop_boxes = sliding_window_tiles(img, stride_rate)
-    n = len(crop_boxes)
+    boxes = sliding_window_tiles(img, stride_rate)
+    n = len(boxes)
 
-    crops = np.zeros((n, input_shape[0], input_shape[1], 3))
+    tiles = np.zeros((n, input_shape[0], input_shape[1], 3))
     for i in xrange(n):
-        box = crop_boxes[i]
-        crops[i] = crop_array(img, box)
-    return crops
+        box = boxes[i]
+        tiles[i] = crop_array(img, box)
+    return tiles
 
 def assemble_sliding_window_tiles(img, stride_rate, tiles):
     '''
@@ -34,9 +34,8 @@ def assemble_sliding_window_tiles(img, stride_rate, tiles):
     n = len(boxes)
     for i in xrange(n):
         sh,eh,sw,ew = boxes[i]
-        crop_prob = crop_probs[i]
-
-        probs[sh:eh,sw:ew,:] += crop_prob[0:eh-sh,0:ew-sw,:]
+        tile = tiles[i]
+        probs[sh:eh,sw:ew,:] += tile[0:eh-sh,0:ew-sw,:]
         cnts[sh:eh,sw:ew,0] += 1
 
     assert cnts.min()>=1
