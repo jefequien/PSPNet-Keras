@@ -42,7 +42,7 @@ class PSPNet(object):
         else:
             # Load cached keras model
             model_path = join("weights", "keras", params['name'] + "_" + params['activation'] + ".hdf5")
-            if isfile(model_path):
+            if False and isfile(model_path):
                print("Cached Keras model found, loading %s" % model_path)
                self.model = load_model(model_path)
             else:

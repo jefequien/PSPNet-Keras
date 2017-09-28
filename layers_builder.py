@@ -6,7 +6,7 @@ from keras.layers.merge import Concatenate, Add
 from keras.models import Model
 from keras.optimizers import SGD
 
-learning_rate = 1e-3  # Layer specific learning rate
+learning_rate = 1e-4  # Layer specific learning rate
 # Weight decay not implemented
 
 
@@ -224,9 +224,10 @@ def build_pspnet(nb_classes, resnet_layers, input_shape, activation='softmax'):
     model = Model(inputs=inp, outputs=x)
 
     # Solver
-    if activation is 'softmax':
+    loss = ""
+    if activation == 'softmax':
         loss = 'categorical_crossentropy'
-    elif activation is 'sigmoid':
+    elif activation == 'sigmoid':
         loss = 'binary_crossentropy'
 
     sgd = SGD(lr=learning_rate, momentum=0.9, nesterov=True)

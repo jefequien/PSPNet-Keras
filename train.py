@@ -37,6 +37,7 @@ if __name__ == "__main__":
                                  'medium',
                                  'big',
                                  'single'])
+    parser.add_argument('-a', '--activation', type=str, default="softmax")
     parser.add_argument('--id', default="0")
     args = parser.parse_args()
 
@@ -59,7 +60,7 @@ if __name__ == "__main__":
 
     with sess.as_default():
         print(args)
-        pspnet = PSPNet50(activation="sigmoid",
+        pspnet = PSPNet50(activation=args.activation,
                             checkpoint=checkpoint)
 
         if args.scale == "normal":
