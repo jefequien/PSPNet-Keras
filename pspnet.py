@@ -42,7 +42,7 @@ class PSPNet(object):
         else:
             # Load cached keras model
             model_path = join("weights", "keras", params['name'] + "_" + params['activation'] + ".hdf5")
-            if False and isfile(model_path):
+            if isfile(model_path):
                print("Cached Keras model found, loading %s" % model_path)
                self.model = load_model(model_path)
             else:
@@ -100,8 +100,8 @@ class PSPNet(object):
 
     def preprocess_sliding_image(self, img):
         stride_rate = 2./3
-        input_data = self.preprocess_image(img)
-        input_data = image_processor.build_sliding_window(img, stride_rate, input_shape=self.input_shape)
+        preprocessed = self.preprocess_image(img)
+        input_data = image_processor.build_sliding_window(preprocessed, stride_rate, input_shape=self.input_shape)
         return input_data
 
     def postprocess_sliding_image(self, img, prediction):
@@ -235,6 +235,18 @@ def predict_sliding(full_image, net):
     # plt.show()
     return full_probs
 
+def save(pred, output_path="out.jpg"):
+    print("Writing results...")
+    cm = np.argmax(probs, axis=2) + 1
+    pm = np.max(probs, axis=2)
+    color_cm = utils.add_color(cm)
+    # color cm is [0.0-1.0] img is [0-255]
+    alpha_blended = 0.5 * color_cm * 255 + 0.5 * img
+    filename, ext = splitext(output_path)
+    misc.imsave(filename + "_seg" + ext, color_cm)
+    misc.imsave(filename + "_probs" + ext, pm)
+    misc.imsave(filename + "_seg_blended" + ext, alpha_blended)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -276,18 +288,8 @@ if __name__ == "__main__":
 
         if args.sliding:
             probs = pspnet.predict_sliding(img)
-            # probs = predict_sliding(img, pspnet)
         else:
             probs = pspnet.predict(img)
 
-        print("Writing results...")
+        save(probs, output_path=args.output_path)
 
-        cm = np.argmax(probs, axis=2) + 1
-        pm = np.max(probs, axis=2)
-        color_cm = utils.add_color(cm)
-        # color cm is [0.0-1.0] img is [0-255]
-        alpha_blended = 0.5 * color_cm * 255 + 0.5 * img
-        filename, ext = splitext(args.output_path)
-        misc.imsave(filename + "_seg" + ext, color_cm)
-        misc.imsave(filename + "_probs" + ext, pm)
-        misc.imsave(filename + "_seg_blended" + ext, alpha_blended)
