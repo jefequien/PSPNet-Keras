@@ -7,10 +7,6 @@ import numpy as np
 import h5py
 from scipy import misc
 
-from keras import backend as K
-import tensorflow as tf
-
-from pspnet import PSPNet50, predict_sliding
 from datasource import DataSource
 import image_processor
 import utils
@@ -35,6 +31,8 @@ if __name__ == "__main__":
                                  'medium',
                                  'big',
                                  'single'])
+    parser.add_argument('--id', default="0")
+    args = parser.parse_args()
 
     config = utils.get_config(args.project)
     datasource = DataSource(config, random=True)
