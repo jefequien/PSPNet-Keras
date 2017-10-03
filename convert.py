@@ -31,6 +31,7 @@ if __name__ == "__main__":
                                  'medium',
                                  'big',
                                  'single'])
+    parser.add_argument('-n', type=int, default=0)
     parser.add_argument('--id', default="0")
     args = parser.parse_args()
 
@@ -38,9 +39,13 @@ if __name__ == "__main__":
     datasource = DataSource(config, random=True)
 
     im_list = datasource.im_list
+#    im_list = im_list[args.n:args.n+2000]
     if args.randomize:
         random.seed(3)
         random.shuffle(im_list)
+
+    params = {}
+    params['activation'] = 'softmax'
 
     # Output directory
     root_result = "predictions/default/{}/{}".format(params['activation'], args.scale)
