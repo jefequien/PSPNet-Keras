@@ -5,10 +5,8 @@ import h5py
 import numpy as np
 from scipy import misc
 import utils
+import utils_image
 
-from pspnet import preprocess_image
-
-# DATA_MEAN = np.array([[[123.68, 116.779, 103.939]]]) # RGB
 NUM_CLASS = 150
 
 class DataSource:
@@ -41,7 +39,7 @@ class DataSource:
         img = misc.imread(img_path)
         if img.ndim != 3:
             img = np.stack((img,img,img), axis=2)
-        return preprocess_image(img)
+        return utils_image.preprocess_image(img)
 
     def get_ground_truth(self, im):
         ground_truth_dir = self.config["ground_truth"]

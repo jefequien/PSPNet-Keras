@@ -17,14 +17,11 @@ from keras.models import load_model
 import tensorflow as tf
 import layers_builder as layers
 import utils
-import image_processor
+import utils_image
+import utils_pspnet
 #import matplotlib.pyplot as plt
 
 __author__ = "Vlad Kryvoruchko, Chaoyue Wang, Jeffrey Hu & Julian Tatsch"
-
-
-# These are the means for the ImageNet pretrained ResNet
-DATA_MEAN = np.array([[[123.68, 116.779, 103.939]]])  # RGB order
 
 
 class PSPNet(object):
@@ -64,9 +61,9 @@ class PSPNet(object):
         if img.shape[0:2] != self.input_shape:
             print("Input %s not fitting for network size %s, resizing. You may want to try sliding prediction for better results." % (img.shape[0:2], self.input_shape))
             img = misc.imresize(img, self.input_shape)
-        input_data = preprocess_image(img, self.input_shape)
+        input_data = utils_image.preprocess_image(img, self.input_shape)
         input_data = input_data[np.newaxis, :, :, :]  # Append sample dimension for keras
-        # utils.debug(self.model, input_data)
+        # utils_pspnet.debug(self.model, input_data)
 
         prediction = self.model.predict(input_data)[0]
 
@@ -161,22 +158,15 @@ class PSPNet101(PSPNet):
                     'activation': activation}
         PSPNet.__init__(self, params, checkpoint=checkpoint)
 
-def preprocess_image(img):
-    """Preprocess an image as input."""
-    float_img = img.astype('float16')
-    centered_image = float_img - DATA_MEAN
-    bgr_image = centered_image[:, :, ::-1]  # RGB => BGR
-    return bgr_image
-
 def preprocess_sliding_image(img, input_shape):
     stride_rate = 2./3
-    preprocessed = preprocess_image(img)
-    input_data = image_processor.build_sliding_window(preprocessed, stride_rate, input_shape=input_shape)
+    preprocessed = utils_image.preprocess_image(img)
+    input_data = utils_image.build_sliding_window(preprocessed, stride_rate, input_shape=input_shape)
     return input_data
 
 def postprocess_sliding_image(img, prediction):
     stride_rate = 2./3
-    prediction = image_processor.assemble_sliding_window_tiles(img, stride_rate, prediction)
+    prediction = utils_image.assemble_sliding_window_tiles(img, stride_rate, prediction)
     return prediction
 
 

@@ -4,7 +4,16 @@ import itertools
 from scipy import misc, ndimage
 import cv2
 
+# These are the means for the ImageNet pretrained ResNet
+DATA_MEAN = np.array([[[123.68, 116.779, 103.939]]])  # RGB order
 INPUT_SIZE = 473
+
+def preprocess_image(img):
+    """Preprocess an image as input."""
+    float_img = img.astype('float16')
+    centered_image = float_img - DATA_MEAN
+    bgr_image = centered_image[:, :, ::-1]  # RGB => BGR
+    return bgr_image
 
 def build_sliding_window(img, stride_rate, input_shape=(473,473)):
     '''
