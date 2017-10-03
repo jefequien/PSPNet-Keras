@@ -34,6 +34,41 @@ def threadsafe_generator(f):
     return g
 
 @threadsafe_generator
+def DiscDataGenerator(datasource, category):
+    while True:
+        im = datasource.next_im()
+        random_im = datasource.random_im()
+        img = datasource.get_image(im)
+        gt = datasource.get_ground_truth(im)
+        ap = datasource.get_prediction(im)
+
+        # Training data
+        g1 = prep_disc_data(img, gt, category)
+        b1 = prep_disc_data(img, ap, category)
+        b2 = prep_disc_data(img, random_gt, category)
+        b3 = prep_disc_data(img, random_ap, category)
+        data = [g1, b1, b2, b3]
+        label = [1, 0, 0, 0]
+
+        # Make sure fourth channel is not all zeros
+        nonzero_data = []
+        nonzero_label = []
+        for i in range(len(data)):
+            if np.max(data[:,:,3]) != 0:
+                nonzero_data.append(data[i])
+                nonzero_label.append(label[i])
+
+        data = np.concatenate(nonzero_data, axis=0)
+        label = nonzero_label
+        yield (data, label)
+
+def prep_disc_data(img, prediction, category):
+    s = prediction[category-1]
+    s = s > 0.5
+    data = np.concatenate((img, s[np.newaxis,:,:]), axis=2)
+    return data
+
+@threadsafe_generator
 def DataGenerator(datasource, maxside=None):
     while True:
         im = datasource.next_im()

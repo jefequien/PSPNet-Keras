@@ -110,7 +110,7 @@ if __name__ == "__main__":
             prob_mask = np.array(np.max(probs, axis=0)*255, dtype='uint8')
             max_prob = np.max(probs, axis=(1,2))
             all_prob = np.array(probs*255+0.5, dtype='uint8')
-            #all_prob = probs
+            
             # write to file
             misc.imsave(fn_mask, pred_mask)
             misc.imsave(fn_prob, prob_mask)

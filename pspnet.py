@@ -64,7 +64,7 @@ class PSPNet(object):
         if img.shape[0:2] != self.input_shape:
             print("Input %s not fitting for network size %s, resizing. You may want to try sliding prediction for better results." % (img.shape[0:2], self.input_shape))
             img = misc.imresize(img, self.input_shape)
-        input_data = self.preprocess_image(img)
+        input_data = preprocess_image(img, self.input_shape)
         input_data = input_data[np.newaxis, :, :, :]  # Append sample dimension for keras
         # utils.debug(self.model, input_data)
 
@@ -77,7 +77,7 @@ class PSPNet(object):
         return prediction
 
     def predict_sliding(self, img):
-        input_data = self.preprocess_sliding_image(img)
+        input_data = preprocess_sliding_image(img)
         n = input_data.shape[0]
         print("Needs %i prediction tiles" % n)
 
@@ -88,25 +88,7 @@ class PSPNet(object):
             batch = input_data[i:i + batch_size]
             predictions.append(self.model.predict(batch))
         prediction = np.concatenate(predictions, axis=0)
-        prediction = self.postprocess_sliding_image(img, prediction)
-        return prediction
-
-    def preprocess_image(self, img):
-        """Preprocess an image as input."""
-        float_img = img.astype('float16')
-        centered_image = float_img - DATA_MEAN
-        bgr_image = centered_image[:, :, ::-1]  # RGB => BGR
-        return bgr_image
-
-    def preprocess_sliding_image(self, img):
-        stride_rate = 2./3
-        preprocessed = self.preprocess_image(img)
-        input_data = image_processor.build_sliding_window(preprocessed, stride_rate, input_shape=self.input_shape)
-        return input_data
-
-    def postprocess_sliding_image(self, img, prediction):
-        stride_rate = 2./3
-        prediction = image_processor.assemble_sliding_window_tiles(img, stride_rate, prediction)
+        prediction = postprocess_sliding_image(img, prediction)
         return prediction
 
     def set_npy_weights(self, name, output_path):
@@ -179,61 +161,79 @@ class PSPNet101(PSPNet):
                     'activation': activation}
         PSPNet.__init__(self, params, checkpoint=checkpoint)
 
+def preprocess_image(img):
+    """Preprocess an image as input."""
+    float_img = img.astype('float16')
+    centered_image = float_img - DATA_MEAN
+    bgr_image = centered_image[:, :, ::-1]  # RGB => BGR
+    return bgr_image
 
-def pad_image(img, target_size):
-    """Pad an image up to the target size."""
-    rows_missing = target_size[0] - img.shape[0]
-    cols_missing = target_size[1] - img.shape[1]
-    padded_img = np.pad(img, ((0, rows_missing), (0, cols_missing), (0, 0)), 'constant')
-    return padded_img
+def preprocess_sliding_image(img, input_shape):
+    stride_rate = 2./3
+    preprocessed = preprocess_image(img)
+    input_data = image_processor.build_sliding_window(preprocessed, stride_rate, input_shape=input_shape)
+    return input_data
+
+def postprocess_sliding_image(img, prediction):
+    stride_rate = 2./3
+    prediction = image_processor.assemble_sliding_window_tiles(img, stride_rate, prediction)
+    return prediction
 
 
-def visualize_prediction(prediction):
-    """Visualize prediction."""
-    cm = np.argmax(prediction, axis=2) + 1
-    color_cm = utils.add_color(cm)
-    plt.imshow(color_cm)
-    plt.show()
+# def pad_image(img, target_size):
+#     """Pad an image up to the target size."""
+#     rows_missing = target_size[0] - img.shape[0]
+#     cols_missing = target_size[1] - img.shape[1]
+#     padded_img = np.pad(img, ((0, rows_missing), (0, cols_missing), (0, 0)), 'constant')
+#     return padded_img
 
-def predict_sliding(full_image, net):
-    """Predict on tiles of exactly the network input shape so nothing gets squeezed."""
-    tile_size = net.input_shape
-    classes = net.model.outputs[0].shape[3]
-    overlap = 1/3
 
-    stride = ceil(tile_size[0] * (1 - overlap))
-    tile_rows = int(ceil((full_image.shape[0] - tile_size[0]) / stride) + 1)  # strided convolution formula
-    tile_cols = int(ceil((full_image.shape[1] - tile_size[1]) / stride) + 1)
-    print("Need %i x %i prediction tiles @ stride %i px" % (tile_cols, tile_rows, stride))
-    full_probs = np.zeros((full_image.shape[0], full_image.shape[1], classes))
-    count_predictions = np.zeros((full_image.shape[0], full_image.shape[1], classes))
-    tile_counter = 0
-    for row in range(tile_rows):
-        for col in range(tile_cols):
-            x1 = int(col * stride)
-            y1 = int(row * stride)
-            x2 = min(x1 + tile_size[1], full_image.shape[1])
-            y2 = min(y1 + tile_size[0], full_image.shape[0])
-            x1 = max(int(x2 - tile_size[1]), 0)  # for portrait images the x1 underflows sometimes
-            y1 = max(int(y2 - tile_size[0]), 0)  # for very few rows y1 underflows
+# def visualize_prediction(prediction):
+#     """Visualize prediction."""
+#     cm = np.argmax(prediction, axis=2) + 1
+#     color_cm = utils.add_color(cm)
+#     plt.imshow(color_cm)
+#     plt.show()
 
-            img = full_image[y1:y2, x1:x2]
-            padded_img = pad_image(img, tile_size)
-            # plt.imshow(padded_img)
-            # plt.show()
-            tile_counter += 1
-            print("Predicting tile %i" % tile_counter)
-            padded_prediction = net.predict(padded_img)
-            prediction = padded_prediction[0:img.shape[0], 0:img.shape[1], :]
-            count_predictions[y1:y2, x1:x2] += 1
-            full_probs[y1:y2, x1:x2] += prediction  # accumulate the predictions also in the overlapping regions
+# def predict_sliding(full_image, net):
+#     """Predict on tiles of exactly the network input shape so nothing gets squeezed."""
+#     tile_size = net.input_shape
+#     classes = net.model.outputs[0].shape[3]
+#     overlap = 1/3
 
-    # average the predictions in the overlapping regions
-    full_probs /= count_predictions
-    # visualize normalization Weights
-    # plt.imshow(np.mean(count_predictions, axis=2))
-    # plt.show()
-    return full_probs
+#     stride = ceil(tile_size[0] * (1 - overlap))
+#     tile_rows = int(ceil((full_image.shape[0] - tile_size[0]) / stride) + 1)  # strided convolution formula
+#     tile_cols = int(ceil((full_image.shape[1] - tile_size[1]) / stride) + 1)
+#     print("Need %i x %i prediction tiles @ stride %i px" % (tile_cols, tile_rows, stride))
+#     full_probs = np.zeros((full_image.shape[0], full_image.shape[1], classes))
+#     count_predictions = np.zeros((full_image.shape[0], full_image.shape[1], classes))
+#     tile_counter = 0
+#     for row in range(tile_rows):
+#         for col in range(tile_cols):
+#             x1 = int(col * stride)
+#             y1 = int(row * stride)
+#             x2 = min(x1 + tile_size[1], full_image.shape[1])
+#             y2 = min(y1 + tile_size[0], full_image.shape[0])
+#             x1 = max(int(x2 - tile_size[1]), 0)  # for portrait images the x1 underflows sometimes
+#             y1 = max(int(y2 - tile_size[0]), 0)  # for very few rows y1 underflows
+
+#             img = full_image[y1:y2, x1:x2]
+#             padded_img = pad_image(img, tile_size)
+#             # plt.imshow(padded_img)
+#             # plt.show()
+#             tile_counter += 1
+#             print("Predicting tile %i" % tile_counter)
+#             padded_prediction = net.predict(padded_img)
+#             prediction = padded_prediction[0:img.shape[0], 0:img.shape[1], :]
+#             count_predictions[y1:y2, x1:x2] += 1
+#             full_probs[y1:y2, x1:x2] += prediction  # accumulate the predictions also in the overlapping regions
+
+#     # average the predictions in the overlapping regions
+#     full_probs /= count_predictions
+#     # visualize normalization Weights
+#     # plt.imshow(np.mean(count_predictions, axis=2))
+#     # plt.show()
+#     return full_probs
 
 def save(pred, output_path="out.jpg"):
     print("Writing results...")

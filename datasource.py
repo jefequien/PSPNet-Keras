@@ -6,13 +6,14 @@ import numpy as np
 from scipy import misc
 import utils
 
-DATA_MEAN = np.array([[[123.68, 116.779, 103.939]]]) # RGB
+from pspnet import preprocess_image
+
+# DATA_MEAN = np.array([[[123.68, 116.779, 103.939]]]) # RGB
 NUM_CLASS = 150
 
 class DataSource:
     def __init__(self, config, random=True):
-        self.image_dir = config["images"]
-        self.ground_truth_dir = config["ground_truth"]
+        self.config = config
 
         self.im_list = utils.open_im_list(config["im_list"])
         
@@ -30,25 +31,35 @@ class DataSource:
                 raise Exception("Reached end of image list.")
             return self.im_list[self.idx]
 
+    # def random_im_with_category(self):
+    #     idx = random.randint(0,len(self.im_list)-1)
+    #     return self.im_list[idx]
+
     def get_image(self, im):
+        image_dir = self.config["images"]
         img_path = os.path.join(self.image_dir, im)
         img = misc.imread(img_path)
         if img.ndim != 3:
             img = np.stack((img,img,img), axis=2)
-        return img
-
-    def preprocess_image(self, img):
-        """Preprocess an image as input."""
-        float_img = img.astype('float16')
-        centered_image = float_img - DATA_MEAN
-        bgr_image = centered_image[:, :, ::-1]  # RGB => BGR
-        return bgr_image
+        return preprocess_image(img)
 
     def get_ground_truth(self, im):
-        gt_path = os.path.join(self.ground_truth_dir, im.replace('.jpg', '.png'))
+        ground_truth_dir = self.config["ground_truth"]
+        gt_path = os.path.join(ground_truth_dir, im.replace('.jpg', '.png'))
         gt = misc.imread(gt_path)
         gt = (np.arange(NUM_CLASS) == gt[:,:,None] - 1)
         return gt
 
+    def get_prediction(self, im):
+        all_probs_dir = os.path.join(self.config["predictions"], "all_prob")
+        file_path = os.path.join(all_probs_dir, im.replace('.jpg', '.h5'))
+        output = open_probs(file_path)
+        return output
 
-
+    def open_probs(self, file_path):
+        with h5py.File(file_path, 'r') as f:
+                output = f['allprob'][:]
+                if output.dtype == 'uint8':
+                    return output.astype('float32')/255
+                else:
+                    return output.astype('float32')
