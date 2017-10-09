@@ -29,10 +29,6 @@ class DataSource:
                 raise Exception("Reached end of image list.")
             return self.im_list[self.idx]
 
-    # def random_im_with_category(self):
-    #     idx = random.randint(0,len(self.im_list)-1)
-    #     return self.im_list[idx]
-
     def get_image(self, im):
         image_dir = self.config["images"]
         img_path = os.path.join(self.image_dir, im)
