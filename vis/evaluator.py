@@ -51,6 +51,10 @@ class Evaluator:
                 im = self.im_list[i]
                 gt, _ = file_utils.get_ground_truth(im, self.config, one_hot=True)
                 ap, _ = file_utils.get_all_prob(im, self.config)
+                if ap is None:
+                    print im, "Not Done."
+                    continue
+                
                 results = evaluate_prediction(gt, ap)
 
                 self.precision[i] = results[0]
