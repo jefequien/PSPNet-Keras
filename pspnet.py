@@ -169,63 +169,7 @@ def postprocess_sliding_image(img, prediction):
     prediction = utils_image.assemble_sliding_window_tiles(img, stride_rate, prediction)
     return prediction
 
-
-# def pad_image(img, target_size):
-#     """Pad an image up to the target size."""
-#     rows_missing = target_size[0] - img.shape[0]
-#     cols_missing = target_size[1] - img.shape[1]
-#     padded_img = np.pad(img, ((0, rows_missing), (0, cols_missing), (0, 0)), 'constant')
-#     return padded_img
-
-
-# def visualize_prediction(prediction):
-#     """Visualize prediction."""
-#     cm = np.argmax(prediction, axis=2) + 1
-#     color_cm = utils.add_color(cm)
-#     plt.imshow(color_cm)
-#     plt.show()
-
-# def predict_sliding(full_image, net):
-#     """Predict on tiles of exactly the network input shape so nothing gets squeezed."""
-#     tile_size = net.input_shape
-#     classes = net.model.outputs[0].shape[3]
-#     overlap = 1/3
-
-#     stride = ceil(tile_size[0] * (1 - overlap))
-#     tile_rows = int(ceil((full_image.shape[0] - tile_size[0]) / stride) + 1)  # strided convolution formula
-#     tile_cols = int(ceil((full_image.shape[1] - tile_size[1]) / stride) + 1)
-#     print("Need %i x %i prediction tiles @ stride %i px" % (tile_cols, tile_rows, stride))
-#     full_probs = np.zeros((full_image.shape[0], full_image.shape[1], classes))
-#     count_predictions = np.zeros((full_image.shape[0], full_image.shape[1], classes))
-#     tile_counter = 0
-#     for row in range(tile_rows):
-#         for col in range(tile_cols):
-#             x1 = int(col * stride)
-#             y1 = int(row * stride)
-#             x2 = min(x1 + tile_size[1], full_image.shape[1])
-#             y2 = min(y1 + tile_size[0], full_image.shape[0])
-#             x1 = max(int(x2 - tile_size[1]), 0)  # for portrait images the x1 underflows sometimes
-#             y1 = max(int(y2 - tile_size[0]), 0)  # for very few rows y1 underflows
-
-#             img = full_image[y1:y2, x1:x2]
-#             padded_img = pad_image(img, tile_size)
-#             # plt.imshow(padded_img)
-#             # plt.show()
-#             tile_counter += 1
-#             print("Predicting tile %i" % tile_counter)
-#             padded_prediction = net.predict(padded_img)
-#             prediction = padded_prediction[0:img.shape[0], 0:img.shape[1], :]
-#             count_predictions[y1:y2, x1:x2] += 1
-#             full_probs[y1:y2, x1:x2] += prediction  # accumulate the predictions also in the overlapping regions
-
-#     # average the predictions in the overlapping regions
-#     full_probs /= count_predictions
-#     # visualize normalization Weights
-#     # plt.imshow(np.mean(count_predictions, axis=2))
-#     # plt.show()
-#     return full_probs
-
-def save(pred, output_path="out.jpg"):
+def save(img, probs, output_path="out.jpg"):
     print("Writing results...")
     cm = np.argmax(probs, axis=2) + 1
     pm = np.max(probs, axis=2)
