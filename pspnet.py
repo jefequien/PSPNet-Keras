@@ -221,9 +221,13 @@ if __name__ == "__main__":
             print("Network architecture not implemented.")
 
         if args.sliding:
-            probs = pspnet.predict_sliding(img)
+            # probs = pspnet.predict_sliding(img)
+            
+            img_s = utils_image.scale_maxside(img, maxside=512)
+            probs_s = pspnet.predict_sliding(img_s)
+            probs = utils_image.scale(probs_s, img.shape)
         else:
             probs = pspnet.predict(img)
 
-        save(probs, output_path=args.output_path)
+        save(img, probs, output_path=args.output_path)
 
