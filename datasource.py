@@ -5,7 +5,6 @@ import h5py
 import numpy as np
 from scipy import misc
 import utils
-import utils_image
 
 NUM_CLASS = 150
 
@@ -35,7 +34,7 @@ class DataSource:
         img = misc.imread(img_path)
         if img.ndim != 3:
             img = np.stack((img,img,img), axis=2)
-        return utils_image.preprocess_image(img)
+        return img
 
     def get_ground_truth(self, im):
         ground_truth_dir = self.config["ground_truth"]
