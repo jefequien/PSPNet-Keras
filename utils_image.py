@@ -73,7 +73,6 @@ def sliding_window_tiles(img, stride_rate, tile_size=473):
         remainder = w - ws[-1]
         delta = tile_size - remainder
         ws[-1] = ws[-1] - delta
-
     crop_locs = list(itertools.product(hs,ws))
 
     boxes = []

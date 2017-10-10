@@ -26,6 +26,8 @@ if __name__ == "__main__":
                                  'medium',
                                  'big',
                                  'single'])
+    parser.add_argument('--start', type=int, default=0)
+    parser.add_argument('--end', type=int, default=None)
     parser.add_argument('--id', default="0")
     args = parser.parse_args()
 
@@ -35,6 +37,7 @@ if __name__ == "__main__":
     datasource = DataSource(config, random=True)
 
     im_list = datasource.im_list
+    im_list = im_list[args.start:args.end]
     if args.randomize:
         random.seed(3)
         random.shuffle(im_list)
