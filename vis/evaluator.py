@@ -7,7 +7,7 @@ import time
 import utils
 import file_utils
 
-DIR = "predictions/results/"
+DIR = "../predictions/results/"
 if not os.path.exists(DIR):
     os.makedirs(DIR)
 
@@ -18,7 +18,7 @@ class Evaluator:
     def __init__(self, name, project, config):
         fname = "{}-{}.h5".format(name, project)
         self.fname = os.path.join(DIR, fname)
-
+        
         self.config = config
         self.im_list = utils.open_im_list(self.config["im_list"])
         self.n = len(self.im_list)
@@ -88,13 +88,14 @@ class Evaluator:
             f.create_dataset('iou', data=self.iou)
 
     def load(self):
+        print "Loading from", self.fname
         if os.path.exists(self.fname):
-            print "Loading..."
             with h5py.File(self.fname, 'r') as f:
                 self.precision = f['precision'][:]
                 self.recall = f['recall'][:]
                 self.iou = f['iou'][:]
         else:
+            print "Not found."
             self.precision = np.zeros((self.n, NUMCLASS))
             self.recall = np.zeros((self.n, NUMCLASS))
             self.iou = np.zeros((self.n, NUMCLASS))

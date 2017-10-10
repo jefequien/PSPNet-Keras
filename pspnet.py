@@ -61,8 +61,8 @@ class PSPNet(object):
         if img.shape[0:2] != self.input_shape:
             print("Input %s not fitting for network size %s, resizing. You may want to try sliding prediction for better results." % (img.shape[0:2], self.input_shape))
             img = misc.imresize(img, self.input_shape)
-        input_data = utils_image.preprocess_image(img, self.input_shape)
-        input_data = input_data[np.newaxis, :, :, :]  # Append sample dimension for keras
+        preprocessed_img = utils_image.preprocess_image(img)
+        input_data = preprocessed_img[np.newaxis, :, :, :]  # Append sample dimension for keras
         # utils_pspnet.debug(self.model, input_data)
 
         prediction = self.model.predict(input_data)[0]
@@ -74,7 +74,8 @@ class PSPNet(object):
         return prediction
 
     def predict_sliding(self, img):
-        input_data = preprocess_sliding_image(img, self.input_shape)
+        preprocessed_img = utils_image.preprocess_image(img)
+        input_data = preprocess_sliding_image(preprocessed_img, self.input_shape)
         n = input_data.shape[0]
         print("Needs %i prediction tiles" % n)
 
@@ -160,8 +161,7 @@ class PSPNet101(PSPNet):
 
 def preprocess_sliding_image(img, input_shape):
     stride_rate = 2./3
-    preprocessed = utils_image.preprocess_image(img)
-    input_data = utils_image.build_sliding_window(preprocessed, stride_rate, input_shape=input_shape)
+    input_data = utils_image.build_sliding_window(img, stride_rate, input_shape=input_shape)
     return input_data
 
 def postprocess_sliding_image(img, prediction):

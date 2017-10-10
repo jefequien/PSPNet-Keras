@@ -120,6 +120,7 @@ if __name__ == "__main__":
     parser.add_argument('-i', '--im_list', type=str, help="Specific image list")
     parser.add_argument('-e', '--evaluation', type=str, help="Evaluation matrix")
     parser.add_argument('-N', '--number', type=int, default=10, help="Number of images")
+    parser.add_argument('-s', '--start', type=int, default=0, help="Number of images")
     args = parser.parse_args()
 
     # Configuration
@@ -144,5 +145,6 @@ if __name__ == "__main__":
         random.seed(3)
         random.shuffle(im_list)
 
+    im_list = im_list[args.start:]
     vis.visualize_images(im_list)
 

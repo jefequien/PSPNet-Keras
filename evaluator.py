@@ -61,6 +61,7 @@ class Evaluator:
 
                 if i % self.save_freq == 0:
                     self.save()
+        self.save()
 
     def is_evaluated(self, i):
         precision = self.precision[i]

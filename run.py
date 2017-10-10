@@ -12,7 +12,7 @@ import tensorflow as tf
 
 from pspnet import PSPNet50
 from datasource import DataSource
-import image_processor
+import utils_image
 import utils
 
 if __name__ == "__main__":
@@ -90,17 +90,17 @@ if __name__ == "__main__":
             if args.scale == "single":
                 probs = pspnet.predict(img)
             elif args.scale == "normal":
-                img_s = image_processor.scale_maxside(img, maxside=512)
+                img_s = utils_image.scale_maxside(img, maxside=512)
                 probs_s = pspnet.predict_sliding(img_s)
-                probs = image_processor.scale(probs_s, img.shape)
+                probs = utils_image.scale(probs_s, img.shape)
             elif args.scale == "medium":
-                img_s = image_processor.scale_maxside(img, maxside=1028)
+                img_s = utils_image.scale_maxside(img, maxside=1028)
                 probs_s = pspnet.predict_sliding(img_s)
-                probs = image_processor.scale(probs_s, img.shape)
+                probs = utils_image.scale(probs_s, img.shape)
             elif args.scale == "big":
-                img_s = image_processor.scale_maxside(img, maxside=2048)
+                img_s = utils_image.scale_maxside(img, maxside=2048)
                 probs_s = pspnet.predict_sliding(img_s)
-                probs = image_processor.scale(probs_s, img.shape)
+                probs = utils_image.scale(probs_s, img.shape)
 
             # probs is 150 x h x w
             probs = np.transpose(probs, (2,0,1))
