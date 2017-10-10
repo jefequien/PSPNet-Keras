@@ -64,6 +64,16 @@ def sliding_window_tiles(img, stride_rate, tile_size=473):
     ws_upper = max(1,w-(tile_size-stride))
     hs = np.arange(0,hs_upper,stride, dtype=int)
     ws = np.arange(0,ws_upper,stride, dtype=int)
+    # Fix last stride
+    if len(hs) > 1:
+        remainder = h - hs[-1]
+        delta = tile_size - remainder
+        hs[-1] = hs[-1] - delta
+    if len(ws) > 1:
+        remainder = w - ws[-1]
+        delta = tile_size - remainder
+        ws[-1] = ws[-1] - delta
+
     crop_locs = list(itertools.product(hs,ws))
 
     boxes = []
