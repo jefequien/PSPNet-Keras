@@ -31,7 +31,7 @@ class DataSource:
 
     def get_image(self, im):
         image_dir = self.config["images"]
-        img_path = os.path.join(self.image_dir, im)
+        img_path = os.path.join(image_dir, im)
         img = misc.imread(img_path)
         if img.ndim != 3:
             img = np.stack((img,img,img), axis=2)
@@ -47,7 +47,8 @@ class DataSource:
     def get_prediction(self, im):
         all_probs_dir = os.path.join(self.config["predictions"], "all_prob")
         file_path = os.path.join(all_probs_dir, im.replace('.jpg', '.h5'))
-        output = open_probs(file_path)
+        output = self.open_probs(file_path)
+        output = np.transpose(output, (1,2,0))
         return output
 
     def open_probs(self, file_path):

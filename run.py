@@ -10,7 +10,7 @@ from scipy import misc
 from keras import backend as K
 import tensorflow as tf
 
-from pspnet import PSPNet50, predict_sliding
+from pspnet import PSPNet50
 from datasource import DataSource
 import image_processor
 import utils
@@ -71,7 +71,7 @@ if __name__ == "__main__":
             fn_prob = os.path.join(root_prob, im)
             fn_allprob = os.path.join(root_allprob, im.replace('.jpg', '.h5'))
 
-            if os.path.exists(fn_maxprob):
+            if os.path.exists(fn_allprob):
                 print "Already done."
                 continue
 
