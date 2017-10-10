@@ -17,8 +17,8 @@ import utils
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-p", '--project', type=str, required=True, help="Project name")
-    parser.add_argument("-r", '--randomize', action='store_true', default=False, help="Randomize image list")
+    parser.add_argument('-p', '--project', type=str, required=True, help="Project name")
+    parser.add_argument('-r', '--randomize', action='store_true', default=False, help="Randomize image list")
     parser.add_argument('-c', '--checkpoint', type=str, help='Checkpoint to use')
     parser.add_argument('-s', '--scale', type=str, default='normal',
                         help='Scale to use',
