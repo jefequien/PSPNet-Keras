@@ -51,19 +51,20 @@ class ImageVisualizer:
         #
         # Open slices
         #
-        order = None
+        order = self.get_order(gt_one_hot)
+        paths["order"] = order
         if gt_one_hot is not None:
-            slices = self.open_slices(gt_one_hot, num=20)
+            slices = self.open_slices(gt_one_hot, order, num=20)
             slices_path = self.save(slices)
             paths["gt_slices"] = slices_path
 
         if ap is not None:
-            slices = self.open_slices(ap, num=20, threshold=True)
+            slices = self.open_slices(ap, order, num=20, threshold=True)
             slices_path = self.save(slices)
             paths["ap_slices_thresholded"] = slices_path
 
         if ap is not None:
-            slices = self.open_slices(ap, num=20)
+            slices = self.open_slices(ap, order, num=20)
             slices_path = self.save(slices)
             paths["ap_slices"] = slices_path
 
@@ -76,13 +77,9 @@ class ImageVisualizer:
         diff[mask] = 0
         return diff
 
-    def open_slices(self, ap, num=10, threshold=False):
+    def open_slices(self, ap, order, num=10, threshold=False):
         if threshold:
             ap = ap > 0.5
-
-        sums = [np.sum(slic) for slic in ap]
-        order = np.flip(np.argsort(sums), 0)
-        #order = range(100)
 
         slices = []
         for i in order[:num]:
@@ -99,6 +96,12 @@ class ImageVisualizer:
         # t = transformer.transform(s)
         # output = np.concatenate([s,t], axis=1)*255
         return s
+
+    def get_order(self, gt):
+        sums = [np.sum(s) for s in gt]
+        order = np.flip(np.argsort(sums), 0)
+        #order = range(100)
+        return order
 
     def blend(self, gt, ap, c):
         gt = gt[c-1]

@@ -50,9 +50,15 @@ class ProjectVisualizer:
         im = line.split()[0]
         paths = self.image_visualizer.visualize(im)
 
+        # Hack to get order from image_visualizer
+        order = paths["order"]
+        del paths["order"]
+
         image_tags = []
-        order = ["image", "prob_mask", "category_mask", "ground_truth", "diff"]
-        for key in order:
+        path_order1 = ["image", "prob_mask", "category_mask", "ground_truth", "diff"]
+        path_order2 = ["gt_slices", "ap_slices_thresholded", "category_mask"]
+        path_order = path_order1 + path_order2
+        for key in path_order:
             if key in paths:
                 tag = self.get_image_tag(paths[key])
                 image_tags.append(tag)
@@ -68,7 +74,7 @@ class ProjectVisualizer:
         # Build section
         title = "{} {}".format(self.project, line)
         img_section = ' '.join(image_tags)
-        result_section = self.build_result_section(result)
+        result_section = self.build_result_section(result, order)
         section = "<br><br>{}<br><br>{}<br>{}".format(title, img_section, result_section)
 
         # Append to body
@@ -78,14 +84,16 @@ class ProjectVisualizer:
         with open(self.output_path, 'w') as f:
             f.write(new_html)
 
-    def build_result_section(self, result):
+    def build_result_section(self, result, order):
         keys = []
         values = []
         for key in result.keys():
             keys.append(key)
             values.append(result[key])
         values = np.stack(values)
-        df = pd.DataFrame(values, index=keys, columns=range(1,151))
+
+        sorted_values = values[:,order]
+        df = pd.DataFrame(sorted_values, index=keys, columns=order+1)
         html = df.to_html()
         return html
 
