@@ -69,13 +69,13 @@ class ProjectVisualizer:
             image_tags.append(tag)
 
         # Results
-        result = self.evaluator.get_result(im)
+        results = self.evaluator.get_results(im)
 
         # Build section
         title = "{} {}".format(self.project, line)
         img_section = ' '.join(image_tags)
-        result_section = self.build_result_section(result, order)
-        section = "<br><br>{}<br><br>{}<br>{}".format(title, img_section, result_section)
+        results_section = self.build_results_section(results, order)
+        section = "<br><br>{}<br><br>{}<br>{}".format(title, img_section, results_section)
 
         # Append to body
         with open(self.output_path, 'r') as f:
@@ -84,12 +84,12 @@ class ProjectVisualizer:
         with open(self.output_path, 'w') as f:
             f.write(new_html)
 
-    def build_result_section(self, result, order):
+    def build_results_section(self, results, order):
         keys = []
         values = []
-        for key in result.keys():
+        for key in results.keys():
             keys.append(key)
-            values.append(result[key])
+            values.append(results[key])
         values = np.stack(values)
 
         sorted_values = values[:,order]

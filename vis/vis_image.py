@@ -51,7 +51,7 @@ class ImageVisualizer:
         #
         # Open slices
         #
-        order = self.get_order(gt_one_hot)
+        order = self.get_order(gt_one_hot, ap)
         paths["order"] = order
         if gt_one_hot is not None:
             slices = self.open_slices(gt_one_hot, order, num=20)
@@ -97,8 +97,10 @@ class ImageVisualizer:
         # output = np.concatenate([s,t], axis=1)*255
         return s
 
-    def get_order(self, gt):
-        sums = [np.sum(s) for s in gt]
+    def get_order(self, gt, ap):
+        gt_sums = np.array([np.sum(s) for s in gt])
+        ap_sums = np.array([np.sum(s) for s in ap])
+        sums = gt_sums + ap_sums
         order = np.flip(np.argsort(sums), 0)
         #order = range(100)
         return order

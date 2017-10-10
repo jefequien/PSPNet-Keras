@@ -33,13 +33,13 @@ class Evaluator:
         assert self.recall.shape[0] == self.n
         assert self.iou.shape[0] == self.n
 
-    def get_result(self, im):
+    def get_results(self, im):
         idx = self.im_list.index(im)
-        result = {}
-        result["precision"] = self.precision[idx]
-        result["recall"] = self.recall[idx]
-        result["iou"] = self.iou[idx]
-        return result
+        results = {}
+        results["precision"] = self.precision[idx]
+        results["recall"] = self.recall[idx]
+        results["iou"] = self.iou[idx]
+        return results
 
     def evaluate(self):
         for i in xrange(self.n):
@@ -47,14 +47,15 @@ class Evaluator:
             if self.is_evaluated(i):
                 print im, "Done."
             else:
-                print im
                 im = self.im_list[i]
                 gt, _ = file_utils.get_ground_truth(im, self.config, one_hot=True)
                 ap, _ = file_utils.get_all_prob(im, self.config)
+                
                 if ap is None:
                     print im, "Not Done."
                     continue
-                
+
+                print im
                 results = evaluate_prediction(gt, ap)
 
                 self.precision[i] = results[0]
@@ -67,6 +68,7 @@ class Evaluator:
 
                 if i % self.save_freq == 0:
                     self.save()
+        self.save()
 
     def is_evaluated(self, i):
         precision = self.precision[i]
@@ -114,9 +116,9 @@ def evaluate_prediction(gt,pr):
     # precision, recall, iou
     results = np.zeros((3,150))
     for i in xrange(150):
-        gt_s = gt[:,:,i]
-        pr_s = pr[:,:,i]
-
+        gt_s = gt[i]
+        pr_s = pr[i]
+        
         intersection = np.logical_and(gt_s, pr_s)
         union = np.logical_or(gt_s, pr_s)
 
@@ -127,7 +129,6 @@ def evaluate_prediction(gt,pr):
             recall = 1.*np.sum(intersection)/np.sum(gt_s)
         if np.sum(union) != 0:
             iou = 1.0*np.sum(intersection)/np.sum(union)
-
         results[:,i] = [precision, recall, iou]
     return results
 
