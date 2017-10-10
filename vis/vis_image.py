@@ -25,6 +25,7 @@ class ImageVisualizer:
         _ , im_path = file_utils.get_image(im, self.config)
         cm, cm_path = file_utils.get_category_mask(im, self.config)
         gt, gt_path = file_utils.get_ground_truth(im, self.config)
+        gt_one_hot, gt_path = file_utils.get_ground_truth(im, self.config, one_hot=True)
         pm, pm_path = file_utils.get_prob_mask(im, self.config)
         ap, ap_path = file_utils.get_all_prob(im, self.config)
 
@@ -51,12 +52,8 @@ class ImageVisualizer:
         # Open slices
         #
         order = None
-        if gt is not None:
-            NUM_CLASS = 150
-            gt_onehot = (np.arange(NUM_CLASS) == gt[:,:,None] - 1)
-            gt_onehot = gt_onehot.transpose((2,0,1))
-
-            slices = self.open_slices(gt_onehot, num=20)
+        if gt_one_hot is not None:
+            slices = self.open_slices(gt_one_hot, num=20)
             slices_path = self.save(slices)
             paths["gt_slices"] = slices_path
 

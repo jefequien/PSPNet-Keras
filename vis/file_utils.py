@@ -33,10 +33,14 @@ def get_prob_mask(im, config):
         print "No prob mask", im
         return None, None
 
-def get_ground_truth(im, config):
+def get_ground_truth(im, config, one_hot=False):
     try:
         path = get_file_path(im, config, ftype="gt")
         img = open_file(path, ftype="gt")
+        if one_hot:
+            NUM_CLASS = 150
+            gt_one_hot = (np.arange(NUM_CLASS) == img[:,:,None] - 1)
+            img = gt_one_hot.transpose((2,0,1))
         return img, path
     except:
         print "No ground truth", im
