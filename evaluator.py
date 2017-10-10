@@ -42,9 +42,14 @@ class Evaluator:
             else:
                 print im
                 im = self.im_list[i]
+
+                t1 = time.time()
                 gt = self.datasource.get_ground_truth(im)
                 pr = self.datasource.get_prediction(im)
+                t2 = time.time()
                 results = evaluate_prediction(gt, pr)
+                t3 = time.time()
+                print "Load: {} Evaluate: {}".format(t2-t1, t3-t2)
 
                 self.precision[i] = results[0]
                 self.recall[i] = results[1]
@@ -98,6 +103,7 @@ class Evaluator:
 
 def evaluate_prediction(gt,pr):
     pr = pr > 0.5
+    print gt.shape, pr.shape
 
     # precision, recall, iou
     results = np.zeros((3,150))
@@ -126,12 +132,10 @@ if __name__ == "__main__":
     parser.add_argument("-n", "--name", required=True, help="Name of run")
     args = parser.parse_args()
 
-    project = args.project
-
-    config = utils.get_config(project)
-    config["prediction"] = args.prediction
+    config = utils.get_config(args.project)
+    config["predictions"] = args.prediction
     datasource = DataSource(config, random=False)
 
-    evaluator = Evaluator(name, project, datasource)
+    evaluator = Evaluator(args.name, args.project, datasource)
     evaluator.evaluate()
 

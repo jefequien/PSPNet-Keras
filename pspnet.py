@@ -74,7 +74,7 @@ class PSPNet(object):
         return prediction
 
     def predict_sliding(self, img):
-        input_data = preprocess_sliding_image(img)
+        input_data = preprocess_sliding_image(img, self.input_shape)
         n = input_data.shape[0]
         print("Needs %i prediction tiles" % n)
 

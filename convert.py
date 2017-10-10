@@ -39,7 +39,7 @@ if __name__ == "__main__":
     datasource = DataSource(config, random=True)
 
     im_list = datasource.im_list
-#    im_list = im_list[args.n:args.n+2000]
+    #im_list = im_list[args.n:args.n + 7000]
     if args.randomize:
         random.seed(3)
         random.shuffle(im_list)
