@@ -7,8 +7,6 @@ import numpy as np
 import h5py
 from scipy import misc
 
-from datasource import DataSource
-import image_processor
 import utils
 
 def open_h5file(file_path):
@@ -36,9 +34,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     config = utils.get_config(args.project)
-    datasource = DataSource(config, random=True)
-
-    im_list = datasource.im_list
+    im_list = utils.open_im_list(config["im_list"])
     #im_list = im_list[args.n:args.n + 7000]
     if args.randomize:
         random.seed(3)

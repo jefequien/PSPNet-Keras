@@ -1,5 +1,5 @@
 import os
-from os.path import splitext, join, isfile, isdir
+from os.path import join, isfile, isdir, dirname, basename
 from os import environ, makedirs
 import sys
 import argparse
@@ -11,9 +11,9 @@ from keras import backend as K
 import tensorflow as tf
 
 from pspnet import PSPNet50
-from datasource import DataSource
-import utils_image
 import utils
+from utils import image_utils
+from utils.datasource import DataSource
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -34,22 +34,19 @@ if __name__ == "__main__":
     environ["CUDA_VISIBLE_DEVICES"] = args.id
 
     config = utils.get_config(args.project)
-    datasource = DataSource(config, random=True)
+    datasource = DataSource(config)
 
-    im_list = datasource.im_list
+    im_list = utils.open_im_list(config["im_list"])
     im_list = im_list[args.start:args.end]
     if args.randomize:
         random.seed(3)
         random.shuffle(im_list)
 
-    params = {}
-    params['activation'] = 'softmax'
-
     # Output directory
-    root_result = "predictions/default/{}/{}".format(params['activation'], args.scale)
+    root_result = "predictions/softmax_default/{}".format(args.scale)
     if args.checkpoint is not None:
-        model = os.path.dirname(args.checkpoint)
-        version = os.path.basename(args.checkpoint).split('-')[0]
+        model = basename(dirname(args.checkpoint))
+        version = basename(args.checkpoint).split('-')[0]
         root_result = "predictions/{}/{}/{}".format(model, version, args.scale)
     print "Outputting to ", root_result
 
@@ -63,8 +60,7 @@ if __name__ == "__main__":
 
     with sess.as_default():
         print(args)
-        pspnet = PSPNet50(activation=params['activation'],
-                            checkpoint=args.checkpoint)
+        pspnet = PSPNet50(checkpoint=args.checkpoint)
 
         for im in im_list:
             print im
@@ -79,31 +75,31 @@ if __name__ == "__main__":
                 continue
 
             # make paths if not exist
-            if not os.path.exists(os.path.dirname(fn_maxprob)):
-                os.makedirs(os.path.dirname(fn_maxprob))
-            if not os.path.exists(os.path.dirname(fn_mask)):
-                os.makedirs(os.path.dirname(fn_mask))
-            if not os.path.exists(os.path.dirname(fn_prob)):
-                os.makedirs(os.path.dirname(fn_prob))
-            if not os.path.exists(os.path.dirname(fn_allprob)):
-                os.makedirs(os.path.dirname(fn_allprob))
+            if not os.path.exists(dirname(fn_maxprob)):
+                os.makedirs(dirname(fn_maxprob))
+            if not os.path.exists(dirname(fn_mask)):
+                os.makedirs(dirname(fn_mask))
+            if not os.path.exists(dirname(fn_prob)):
+                os.makedirs(dirname(fn_prob))
+            if not os.path.exists(dirname(fn_allprob)):
+                os.makedirs(dirname(fn_allprob))
 
-            img = datasource.get_image(im)
+            img, _ = datasource.get_image(im)
             probs = None
             if args.scale == "single":
                 probs = pspnet.predict(img)
             elif args.scale == "normal":
-                img_s = utils_image.scale_maxside(img, maxside=512)
+                img_s = image_utils.scale_maxside(img, maxside=512)
                 probs_s = pspnet.predict_sliding(img_s)
-                probs = utils_image.scale(probs_s, img.shape)
+                probs = image_utils.scale(probs_s, img.shape)
             elif args.scale == "medium":
-                img_s = utils_image.scale_maxside(img, maxside=1028)
+                img_s = image_utils.scale_maxside(img, maxside=1028)
                 probs_s = pspnet.predict_sliding(img_s)
-                probs = utils_image.scale(probs_s, img.shape)
+                probs = image_utils.scale(probs_s, img.shape)
             elif args.scale == "big":
-                img_s = utils_image.scale_maxside(img, maxside=2048)
+                img_s = image_utils.scale_maxside(img, maxside=2048)
                 probs_s = pspnet.predict_sliding(img_s)
-                probs = utils_image.scale(probs_s, img.shape)
+                probs = image_utils.scale(probs_s, img.shape)
 
             # probs is 150 x h x w
             probs = np.transpose(probs, (2,0,1))

@@ -5,7 +5,7 @@ import h5py
 import time
 
 import utils
-import file_utils
+from datasource import DataSource
 
 DIR = "../predictions/results/"
 if not os.path.exists(DIR):
@@ -15,12 +15,13 @@ NUMCLASS = 150
 
 class Evaluator:
 
-    def __init__(self, name, project, config):
+    def __init__(self, name, project, datasource):
         fname = "{}-{}.h5".format(name, project)
         self.fname = os.path.join(DIR, fname)
         
-        self.config = config
-        self.im_list = utils.open_im_list(self.config["im_list"])
+        self.datasource = datasource
+        # Uses default im_list
+        self.im_list = utils.open_im_list(datasource.config["im_list"])
         self.n = len(self.im_list)
 
         self.save_freq = 10
@@ -33,12 +34,19 @@ class Evaluator:
         assert self.recall.shape[0] == self.n
         assert self.iou.shape[0] == self.n
 
+    def get_im_list_by_category(self, category):
+        # Image has category if IOU is defined
+        i = category - 1
+        nonnan = ~np.isnan(self.iou[:,i])
+        defined = np.argwhere(nonnan)
+        return self.im_list[defined]
+
     def get_results(self, im):
-        idx = self.im_list.index(im)
+        i = np.where(self.im_list==im)[0][0]
         results = {}
-        results["precision"] = self.precision[idx]
-        results["recall"] = self.recall[idx]
-        results["iou"] = self.iou[idx]
+        results["precision"] = self.precision[i]
+        results["recall"] = self.recall[i]
+        results["iou"] = self.iou[i]
         return results
 
     def evaluate(self):
@@ -48,8 +56,8 @@ class Evaluator:
                 print im, "Done."
             else:
                 im = self.im_list[i]
-                gt, _ = file_utils.get_ground_truth(im, self.config, one_hot=True)
-                ap, _ = file_utils.get_all_prob(im, self.config)
+                gt, _ = self.datasource.get_ground_truth(im, one_hot=True)
+                ap, _ = self.datasource.get_all_prob(im)
                 
                 if ap is None:
                     print im, "Not Done."
@@ -75,17 +83,6 @@ class Evaluator:
         recall = self.recall[i]
         iou = self.iou[i]
         return np.any(~np.isnan(precision)) or np.any(~np.isnan(recall)) or np.any(~np.isnan(iou))
-
-    def get_indicies(self, im_list):
-        return [self.im_list.index(im) for im in im_list]
-
-    def get_image_metrics(self, im, category):
-        c = category - 1
-        i = self.im_list.index(im)
-        precision = self.precision[i,c]
-        recall = self.recall[i,c]
-        iou = self.iou[i,c]
-        return [precision, recall, iou]
 
     def save(self):
         with h5py.File(self.fname, 'w') as f:
@@ -141,7 +138,8 @@ if __name__ == "__main__":
 
     config = utils.get_config(args.project)
     config["pspnet_prediction"] = args.prediction
+    datasource = DataSource(config)
 
-    evaluator = Evaluator(args.name, args.project, config)
+    evaluator = Evaluator(args.name, args.project, datasource)
     evaluator.evaluate()
 

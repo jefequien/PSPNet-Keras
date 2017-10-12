@@ -10,6 +10,7 @@ from os.path import splitext, join, isfile
 from os import environ
 from math import ceil
 import argparse
+import h5py
 import numpy as np
 from scipy import misc, ndimage
 from keras import backend as K
@@ -17,9 +18,8 @@ from keras.models import load_model
 import tensorflow as tf
 import layers_builder as layers
 import utils
-import utils_image
-import utils_pspnet
-#import matplotlib.pyplot as plt
+from utils import image_utils
+from utils import pspnet_utils
 
 __author__ = "Vlad Kryvoruchko, Chaoyue Wang, Jeffrey Hu & Julian Tatsch"
 
@@ -61,9 +61,9 @@ class PSPNet(object):
         if img.shape[0:2] != self.input_shape:
             print("Input %s not fitting for network size %s, resizing. You may want to try sliding prediction for better results." % (img.shape[0:2], self.input_shape))
             img = misc.imresize(img, self.input_shape)
-        preprocessed_img = utils_image.preprocess_image(img)
+        preprocessed_img = image_utils.preprocess_image(img)
         input_data = preprocessed_img[np.newaxis, :, :, :]  # Append sample dimension for keras
-        # utils_pspnet.debug(self.model, input_data)
+        # pspnet_utils.debug(self.model, input_data)
 
         prediction = self.model.predict(input_data)[0]
 
@@ -74,7 +74,7 @@ class PSPNet(object):
         return prediction
 
     def predict_sliding(self, img):
-        preprocessed_img = utils_image.preprocess_image(img)
+        preprocessed_img = image_utils.preprocess_image(img)
         input_data = preprocess_sliding_image(preprocessed_img, self.input_shape)
         n = input_data.shape[0]
         print("Needs %i prediction tiles" % n)
@@ -161,12 +161,12 @@ class PSPNet101(PSPNet):
 
 def preprocess_sliding_image(img, input_shape):
     stride_rate = 2./3
-    input_data = utils_image.build_sliding_window(img, stride_rate, input_shape=input_shape)
+    input_data = image_utils.build_sliding_window(img, stride_rate, input_shape=input_shape)
     return input_data
 
 def postprocess_sliding_image(img, prediction):
     stride_rate = 2./3
-    prediction = utils_image.assemble_sliding_window_tiles(img, stride_rate, prediction)
+    prediction = image_utils.assemble_sliding_window_tiles(img, stride_rate, prediction)
     return prediction
 
 def save(img, probs, output_path="out.jpg"):
@@ -180,6 +180,10 @@ def save(img, probs, output_path="out.jpg"):
     misc.imsave(filename + "_seg" + ext, color_cm)
     misc.imsave(filename + "_probs" + ext, pm)
     misc.imsave(filename + "_seg_blended" + ext, alpha_blended)
+
+    all_prob = np.array(probs*255+0.5, dtype='uint8')
+    with h5py.File(filename + ".h5", 'w') as f:
+        f.create_dataset('allprob', data=all_prob)
 
 
 if __name__ == "__main__":
@@ -221,11 +225,7 @@ if __name__ == "__main__":
             print("Network architecture not implemented.")
 
         if args.sliding:
-            # probs = pspnet.predict_sliding(img)
-            
-            img_s = utils_image.scale_maxside(img, maxside=512)
-            probs_s = pspnet.predict_sliding(img_s)
-            probs = utils_image.scale(probs_s, img.shape)
+            probs = pspnet.predict_sliding(img)
         else:
             probs = pspnet.predict(img)
 

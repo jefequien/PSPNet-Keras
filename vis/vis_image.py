@@ -6,8 +6,8 @@ import argparse
 import numpy as np
 from scipy import misc
 
-import file_utils
 import utils
+from utils.datasource import DataSource
 
 TMP_DIR = "tmp/"
 IMAGES_DIR = "tmp/images/"
@@ -16,21 +16,22 @@ if not os.path.exists(IMAGES_DIR):
 
 class ImageVisualizer:
 
-    def __init__(self, project, config):
+    def __init__(self, project, datasource):
         self.project = project
-        self.config = config
+        self.datasource = datasource
 
     def visualize(self, im):
         # Get files
-        _ , im_path = file_utils.get_image(im, self.config)
-        cm, cm_path = file_utils.get_category_mask(im, self.config)
-        gt, gt_path = file_utils.get_ground_truth(im, self.config)
-        gt_one_hot, gt_path = file_utils.get_ground_truth(im, self.config, one_hot=True)
-        pm, pm_path = file_utils.get_prob_mask(im, self.config)
-        ap, ap_path = file_utils.get_all_prob(im, self.config)
+        im, im_path = self.datasource.get_image(im)
+        cm, cm_path = self.datasource.get_category_mask(im)
+        gt, gt_path = self.datasource.get_ground_truth(im)
+        gt_one_hot, gt_path = self.datasource.get_ground_truth(im, one_hot=True)
+        pm, pm_path = self.datasource.get_prob_mask(im)
+        ap, ap_path = self.datasource.get_all_prob(im)
 
         paths = {}
-        paths["image"] = im_path
+        if im is not None:
+            paths["image"] = im_path
 
         if cm is not None:
             cm_color, cm_color_path = self.add_color(cm)
@@ -98,11 +99,18 @@ class ImageVisualizer:
         return s
 
     def get_order(self, gt, ap):
-        gt_sums = np.array([np.sum(s) for s in gt])
-        ap_sums = np.array([np.sum(s) for s in ap])
+        if gt is None and ap is None:
+            return np.arange(0,150)
+
+        gt_sums = np.zeros(150)
+        ap_sums = np.zeros(150)
+        if gt is not None:
+            gt_sums = np.array([np.sum(s) for s in gt])
+        if ap is not None:
+            ap_sums = np.array([np.sum(s) for s in ap])
+
         sums = gt_sums + ap_sums
         order = np.flip(np.argsort(sums), 0)
-        #order = range(100)
         return order
 
     def blend(self, gt, ap, c):
@@ -153,7 +161,8 @@ if __name__ == "__main__":
 
     print args.project, im
     config = utils.get_config(args.project)
-    vis = ImageVisualizer(args.project, config)
+    datasource = DataSource(config)
+    vis = ImageVisualizer(args.project, datasource)
     paths = vis.visualize(im)
     print paths
 

@@ -6,9 +6,10 @@ import time
 import numpy as np
 import pandas as pd
 
-from evaluator import Evaluator
-from vis_image import ImageVisualizer
 import utils
+from utils.datasource import DataSource
+from utils.evaluator import Evaluator
+from vis_image import ImageVisualizer
 
 TMP_DIR = "tmp/"
 IMAGES_DIR = "tmp/images/"
@@ -17,19 +18,19 @@ if not os.path.exists(IMAGES_DIR):
 
 class ProjectVisualizer:
 
-    def __init__(self, project, config, MAX=100, evaluator=None):
+    def __init__(self, project, datasource, MAX=100, evaluator=None):
         self.project = project
-        self.image_visualizer = ImageVisualizer(project, config)
+        self.image_visualizer = ImageVisualizer(project, datasource)
         self.evaluator = evaluator
         self.MAX = MAX
 
         fname = "{}_{}.html".format(project, int(time.time()))
         self.output_path = os.path.join(TMP_DIR, fname)
 
-        self.init_output_file(config)
+        self.init_output_file(datasource)
 
-    def init_output_file(self, config):
-        head = str(config)
+    def init_output_file(self, datasource):
+        head = str(datasource.config)
         body = ""
         html = "<html><head>" + head + "</head><body>" + body + "</body></html>"
         with open(self.output_path, 'w') as f:
@@ -128,8 +129,9 @@ if __name__ == "__main__":
     if args.prediction is not None:
         config["pspnet_prediction"] = args.prediction
 
-    evaluator = Evaluator(args.name, args.project, config) # Evaluation results
-    vis = ProjectVisualizer(args.project, config, MAX=args.number, evaluator=evaluator)
+    datasource = DataSource(config)
+    evaluator = Evaluator(args.name, args.project, datasource) # Evaluation results
+    vis = ProjectVisualizer(args.project, datasource, MAX=args.number, evaluator=evaluator)
 
     # Image List
     im_list = None

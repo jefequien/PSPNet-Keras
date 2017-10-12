@@ -11,9 +11,9 @@ from keras.callbacks import ModelCheckpoint
 import tensorflow as tf
 
 from pspnet import PSPNet50
-from datasource import DataSource
-from data_generator import DataGenerator
 import utils
+from utils.datasource import DataSource
+from data_generator import DataGenerator
 
 def train(pspnet, data_generator, checkpoint_dir, initial_epoch=0):
     filename = "weights.{epoch:02d}-{loss:.4f}.hdf5"
@@ -43,10 +43,22 @@ if __name__ == "__main__":
 
     environ["CUDA_VISIBLE_DEVICES"] = args.id
 
+    if args.scale == "normal":
+        maxside = 512
+    elif args.scale == "medium":
+        maxside = 1024
+    elif args.scale == "big":
+        maxside = 2048
+    else:
+        maxside = None
+
     project = "ade20k"
     config = utils.get_config(project)
-    datasource = DataSource(config, random=True)
+    im_list = utils.open_im_list(config["im_list"])
+    datasource = DataSource(config)
+    data_generator = DataGenerator(im_list, datasource, maxside=maxside)
 
+    # Load checkpoint
     checkpoint_dir = join("weights", "checkpoints", args.name)
     if not isdir(checkpoint_dir):
         makedirs(checkpoint_dir)
@@ -63,16 +75,6 @@ if __name__ == "__main__":
         pspnet = PSPNet50(activation=args.activation,
                             checkpoint=checkpoint)
 
-        if args.scale == "normal":
-            maxside = 512
-        elif args.scale == "medium":
-            maxside = 1024
-        elif args.scale == "big":
-            maxside = 2048
-        else:
-            maxside = None
-
-        data_generator = DataGenerator(datasource, maxside=maxside)
         train(pspnet, data_generator, checkpoint_dir, initial_epoch=epoch)
 
 

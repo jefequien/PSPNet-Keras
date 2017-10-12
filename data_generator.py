@@ -4,9 +4,9 @@ import threading
 import numpy as np
 from scipy import misc
 
-from image_processor import *
 import utils
-from datasource import DataSource
+from utils import image_utils
+from utils.datasource import DataSource
 
 NUM_CLASS = 150
 
@@ -34,58 +34,56 @@ def threadsafe_generator(f):
     return g
 
 @threadsafe_generator
-def DiscDataGenerator(datasource, category):
+def DiscDataGenerator(im_list, datasource, category):
     while True:
-        im = datasource.next_im()
-        random_im = datasource.random_im()
-        img = datasource.get_image(im)
-        gt = datasource.get_ground_truth(im)
-        ap = datasource.get_prediction(im)
+        im1 = random.choice(im_list)
+        im2 = random.choice(im_list)
+        img1, _ = datasource.get_image(im1)
+        img2, _ = datasource.get_image(im2)
+        img1 = image_utils.preprocess_image(img1)
+        img2 = image_utils.preprocess_image(img2)
+        gt1, _ = datasource.get_ground_truth(im1, one_hot=True)
+        gt2, _ = datasource.get_ground_truth(im2, one_hot=True)
+        ap1, _ = datasource.get_all_prob(im1)
+        ap2, _ = datasource.get_all_prob(im2)
 
         # Training data
-        g1 = prep_disc_data(img, gt, category)
-        b1 = prep_disc_data(img, ap, category)
-        b2 = prep_disc_data(img, random_gt, category)
-        b3 = prep_disc_data(img, random_ap, category)
+        g1 = prep_disc_data(img1, gt1, category)
+        b1 = prep_disc_data(img1, ap1, category)
+        b2 = prep_disc_data(img1, gt2, category)
+        b3 = prep_disc_data(img1, ap2, category)
         data = [g1, b1, b2, b3]
         label = [1, 0, 0, 0]
 
-        # Make sure fourth channel is not all zeros
-        nonzero_data = []
-        nonzero_label = []
-        for i in range(len(data)):
-            if np.max(data[:,:,3]) != 0:
-                nonzero_data.append(data[i])
-                nonzero_label.append(label[i])
-
-        data = np.concatenate(nonzero_data, axis=0)
-        label = nonzero_label
+        data = np.concatenate(data, axis=0)
+        label = label
         yield (data, label)
 
-def prep_disc_data(img, prediction, category):
-    s = prediction[category-1]
+def prep_disc_data(img, pr, category):
+    s = pr[category-1]
     s = s > 0.5
-    data = np.concatenate((img, s[np.newaxis,:,:]), axis=2)
+    data = np.concatenate((img, s[:,:,np.newaxis]), axis=2)
     return data
 
 @threadsafe_generator
-def DataGenerator(datasource, maxside=None):
+def DataGenerator(im_list, datasource, maxside=None):
     while True:
-        im = datasource.next_im()
-        img = datasource.get_image(im)
-        img = datasource.preprocess_image(img)
-        gt = datasource.get_ground_truth(im)
+        im = random.choice(im_list)
+        img, _ = datasource.get_image(im)
+        gt, _ = datasource.get_ground_truth(im, one_hot=True)
+        img = image_utils.preprocess_image(img)
+        gt = gt.transpose((1,2,0)) # Make channel-last
 
         if maxside is None:
-            img_s = scale(img, (473,473))
-            gt_s = scale(gt, (473,473))
+            img_s = image_utils.scale(img, (473,473))
+            gt_s = image_utils.scale(gt, (473,473))
         else:
-            img_s = scale_maxside(img, maxside=maxside)
-            gt_s = scale_maxside(gt, maxside=maxside)
+            img_s = image_utils.scale_maxside(img, maxside=maxside)
+            gt_s = image_utils.scale_maxside(gt, maxside=maxside)
         
-        box = random_crop(img_s)
-        data = crop_array(img_s, box)
-        label = crop_array(gt_s, box)
+        box = image_utils.random_crop(img_s)
+        data = image_utils.crop_array(img_s, box)
+        label = image_utils.crop_array(gt_s, box)
 
         # Batch size of 1
         data = data[np.newaxis, ...]
@@ -96,8 +94,9 @@ def DataGenerator(datasource, maxside=None):
 if __name__ == "__main__":
     project = "local"
     config = utils.get_config(project)
-    datasource = DataSource(config, random=True)
-    generator = DataGenerator(datasource, maxside=512)
+    im_list = utils.open_im_list(config["im_list"])
+    datasource = DataSource(config)
+    generator = DataGenerator(im_list, datasource, maxside=512)
 
     data, label = generator.next()
     print data.shape
