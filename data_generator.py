@@ -59,7 +59,14 @@ def DiscDataGenerator(im_list, datasource, category):
 
         data = np.stack(data, axis=0)
         label = label
+        save(data)
         yield (data, label)
+
+def save(data):
+    import uuid
+    fname = "vis/tmp/{}.h5".format(uuid.uuid4().hex)
+    with h5py.File(fname, 'w') as f:
+        f.create_dataset('data', data=data)
 
 def prep_disc_data(img, pr, category):
     s = pr[category-1]
