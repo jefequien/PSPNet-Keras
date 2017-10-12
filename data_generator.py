@@ -7,6 +7,7 @@ from scipy import misc
 import utils
 from utils import image_utils
 from utils.datasource import DataSource
+from disc import prepare_disc_data
 
 NUM_CLASS = 150
 
@@ -53,15 +54,15 @@ def DiscDataGenerator(im_list, datasource, category):
         img2 = image_utils.scale(img2, (473,473))
         img2 = image_utils.preprocess_image(img2)
 
-        g1 = prep_disc_data(img1, gt1, category)
-        g2 = prep_disc_data(img2, gt2, category)
-        g3 = prep_disc_data(img1, gt1, category) # Duplicate
-        g4 = prep_disc_data(img2, gt2, category) # Duplicate
+        g1 = prepare_disc_data(img1, gt1, category)
+        g2 = prepare_disc_data(img2, gt2, category)
+        g3 = prepare_disc_data(img1, gt1, category) # Duplicate
+        g4 = prepare_disc_data(img2, gt2, category) # Duplicate
 
-        b1 = prep_disc_data(img1, ap1, category)
-        b2 = prep_disc_data(img2, ap2, category)
-        b3 = prep_disc_data(img1, gt2, category)
-        b4 = prep_disc_data(img1, ap2, category)
+        b1 = prepare_disc_data(img1, ap1, category)
+        b2 = prepare_disc_data(img2, ap2, category)
+        b3 = prepare_disc_data(img1, gt2, category)
+        b4 = prepare_disc_data(img1, ap2, category)
         data =  [g1,g2,g3,g4,b1,b2,b3]
         label = [1, 1, 1, 1, 0, 0, 0]
 
@@ -75,13 +76,6 @@ def save(data):
     fname = "vis/tmp/{}.h5".format(uuid.uuid4().hex)
     with h5py.File(fname, 'w') as f:
         f.create_dataset('data', data=data)
-
-def prep_disc_data(img, pr, category):
-    s = pr[category-1]
-    s = image_utils.scale(s, img.shape[:2])
-    s = s > 0.5
-    data = np.concatenate((img, s[:,:,np.newaxis]), axis=2)
-    return data
 
 @threadsafe_generator
 def DataGenerator(im_list, datasource, maxside=None):

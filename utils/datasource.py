@@ -10,7 +10,7 @@ class DataSource:
 
     def __init__(self, config):
         self.config = config
-        self.print_config()
+        # self.print_config()
 
     def print_config(self):
         print "Config"

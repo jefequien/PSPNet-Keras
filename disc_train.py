@@ -60,7 +60,7 @@ if __name__ == "__main__":
     # Image list
     evaluator = Evaluator(args.name, project, datasource)
     im_list = evaluator.get_im_list_by_category(args.category)
-    print len(im_list)
+    print args.category, len(im_list)
 
     data_generator = DiscDataGenerator(im_list, datasource, args.category)
 

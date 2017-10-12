@@ -64,15 +64,19 @@ class Discriminator(object):
         """
         img_resized = misc.imresize(img, self.input_shape)
         img_preprocessed = image_utils.preprocess_image(img_resized)
-
-        s = prediction[category-1]
-        s_resized = misc.imresize(s, self.input_shape)
-
-        input_data = np.concatenate((img_preprocessed, s_resized[:,:,np.newaxis]), axis=2)
+        
+        input_data = prepare_disc_data(img_preprocessed, prediction, category)
         input_data = input_data[np.newaxis, :, :, :]  # Append sample dimension for keras
 
         prediction = self.model.predict(input_data)[0]
         return prediction
+
+def prepare_disc_data(img, prediction, category):
+    s = prediction[category-1]
+    s = image_utils.scale(s, img.shape[:2])
+    s = s > 0.5
+    data = np.concatenate((img, s[:,:,np.newaxis]), axis=2)
+    return data
 
 
 if __name__ == "__main__":
