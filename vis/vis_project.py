@@ -119,9 +119,9 @@ if __name__ == "__main__":
     parser.add_argument("--prediction", type=str, required=True, help="")
     parser.add_argument('-r', '--randomize', action='store_true', default=False, help="Randomize image list")
     parser.add_argument('-i', '--im_list', type=str, help="Specific image list")
-    parser.add_argument('-e', '--evaluation', type=str, help="Evaluation matrix")
     parser.add_argument('-N', '--number', type=int, default=10, help="Number of images")
     parser.add_argument('-s', '--start', type=int, default=0, help="Number of images")
+    parser.add_argument('-c', '--category', type=int, default=1, help="Category")
     args = parser.parse_args()
 
     # Configuration
@@ -135,12 +135,14 @@ if __name__ == "__main__":
 
     # Image List
     im_list = None
-    if not args.im_list:
-        # Open default image list
-        im_list = utils.open_im_list(config["im_list"])
-    else:
+    if args.im_list:
         # Open specific image list
         im_list = utils.open_im_list(args.im_list)
+    elif args.category:
+        im_list = evaluator.get_im_list_by_category(args.category)
+    else:
+        # Open default image list
+        im_list = utils.open_im_list(config["im_list"])
 
     if args.randomize:
         # Shuffle image list

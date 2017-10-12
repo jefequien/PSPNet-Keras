@@ -34,6 +34,7 @@ if __name__ == "__main__":
     parser.add_argument('-n', '--name', type=str, required=True, help="Name to identify this model")
     parser.add_argument('-c', '--category', type=int, required=True)
     parser.add_argument('-p', '--prediction', type=str, required=True)
+    parser.add_argument('-lr', '--learning_rate', type=float, required=True, default=1e-4)
     parser.add_argument('--resume', action='store_true', default=False)
     parser.add_argument('--id', default="0")
     args = parser.parse_args()
@@ -41,7 +42,7 @@ if __name__ == "__main__":
     environ["CUDA_VISIBLE_DEVICES"] = args.id
 
     # Checkpoint handling
-    checkpoint_name = "{}-{}".format(args.name, args.category)
+    checkpoint_name = "{}-{}-{}".format(args.name, args.learning_rate, args.category)
     checkpoint_dir = join("weights", "checkpoints", "disc", checkpoint_name)
     if not isdir(checkpoint_dir):
         makedirs(checkpoint_dir)
@@ -59,7 +60,7 @@ if __name__ == "__main__":
     # Image list
     evaluator = Evaluator(args.name, project, datasource)
     im_list = evaluator.get_im_list_by_category(args.category)
-    print im_list[:10]
+    print len(im_list)
 
     data_generator = DiscDataGenerator(im_list, datasource, args.category)
 
@@ -68,7 +69,7 @@ if __name__ == "__main__":
     with sess.as_default():
         print(args)
 
-        disc = Discriminator(checkpoint=checkpoint)
+        disc = Discriminator(lr=args.learning_rate, checkpoint=checkpoint)
         train(disc, data_generator, checkpoint_dir, initial_epoch=epoch)
 
 

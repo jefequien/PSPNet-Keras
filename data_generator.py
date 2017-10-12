@@ -48,6 +48,8 @@ def DiscDataGenerator(im_list, datasource, category):
         ap2, _ = datasource.get_all_prob(im2)
 
         # Training data
+        img1 = image_utils.scale(img1, (473,473))
+        img1 = image_utils.preprocess_image(img1)
         g1 = prep_disc_data(img1, gt1, category)
         b1 = prep_disc_data(img1, ap1, category)
         b2 = prep_disc_data(img1, gt2, category)
@@ -55,12 +57,13 @@ def DiscDataGenerator(im_list, datasource, category):
         data = [g1, b1, b2, b3]
         label = [1, 0, 0, 0]
 
-        data = np.concatenate(data, axis=0)
+        data = np.stack(data, axis=0)
         label = label
         yield (data, label)
 
 def prep_disc_data(img, pr, category):
     s = pr[category-1]
+    s = image_utils.scale(s, img.shape[:2])
     s = s > 0.5
     data = np.concatenate((img, s[:,:,np.newaxis]), axis=2)
     return data

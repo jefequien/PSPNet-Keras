@@ -27,27 +27,27 @@ from utils.datasource import open_file
 class Discriminator(object):
     """Discriminator for classes"""
 
-    def __init__(self, checkpoint=None):
+    def __init__(self, lr=1e-4, checkpoint=None):
         print("checkpoint %s" % checkpoint)
         """Instanciate a Resnet discriminator"""
 
         if checkpoint is None:
             print("Building Resnet discriminator")
-            self.model = self.build_model()
+            self.model = self.build_model(lr)
         else:
             print("Loading from checkpoint %s" % checkpoint)
             self.model = load_model(checkpoint)
 
         self.input_shape = (473,473)
 
-    def build_model(self):
+    def build_model(self, lr):
         inp = Input((473,473,4))
         resnet = ResNet50(input_tensor=inp, weights=None, include_top=False)
         x = Flatten()(resnet.outputs[0])
         output = Dense(1, activation='sigmoid')(x)
         model = Model(inputs=inp, outputs=output)
 
-        sgd = SGD(lr=1e-4, momentum=0.9, nesterov=True)
+        sgd = SGD(lr=lr, momentum=0.9, nesterov=True)
         model.compile(optimizer=sgd,
                         loss="binary_crossentropy",
                         metrics=['accuracy'])

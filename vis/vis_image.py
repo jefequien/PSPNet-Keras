@@ -22,7 +22,7 @@ class ImageVisualizer:
 
     def visualize(self, im):
         # Get files
-        im, im_path = self.datasource.get_image(im)
+        img, im_path = self.datasource.get_image(im)
         cm, cm_path = self.datasource.get_category_mask(im)
         gt, gt_path = self.datasource.get_ground_truth(im)
         gt_one_hot, gt_path = self.datasource.get_ground_truth(im, one_hot=True)

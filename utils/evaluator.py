@@ -7,7 +7,8 @@ import time
 import utils
 from datasource import DataSource
 
-DIR = "../predictions/results/"
+PATH = os.path.dirname(__file__)
+DIR = os.path.join(PATH, "../predictions/results/")
 if not os.path.exists(DIR):
     os.makedirs(DIR)
 
@@ -38,7 +39,7 @@ class Evaluator:
         # Image has category if IOU is defined
         i = category - 1
         nonnan = ~np.isnan(self.iou[:,i])
-        defined = np.argwhere(nonnan)
+        defined = np.nonzero(nonnan)
         return self.im_list[defined]
 
     def get_results(self, im):
