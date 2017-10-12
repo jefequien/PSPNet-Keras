@@ -10,8 +10,11 @@ INPUT_SIZE = 473
 
 def preprocess_image(img):
     """Preprocess an image as input."""
-    float_img = img.astype('float16')
-    centered_image = float_img - DATA_MEAN
+    f_img = img.astype('float32')
+    if f_img.ndim != 3:
+        f_img = np.stack((f_img,f_img,f_img), axis=2)
+
+    centered_image = f_img - DATA_MEAN
     bgr_image = centered_image[:, :, ::-1]  # RGB => BGR
     return bgr_image
 
@@ -122,7 +125,7 @@ def scale(a, shape):
     if np.ndim(a) == 3 and a.shape[2] == 3:
         # Image, use bilinear
         return ndimage.zoom(a, (r_h,r_w,1.), order=1, prefilter=False)
-    elif np.ndim(a) == 3 and a.dtype == 'float32':
+    elif np.ndim(a) == 3 and np.issubdtype(a.dtype, float):
         # Probs, use bilinear
         return ndimage.zoom(a, (r_h,r_w,1.), order=1, prefilter=False)
     else:

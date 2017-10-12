@@ -75,6 +75,7 @@ def prepare_disc_data(img, prediction, category):
     s = prediction[category-1]
     s = image_utils.scale(s, img.shape[:2])
     s = s > 0.5
+    s = s * 255
     data = np.concatenate((img, s[:,:,np.newaxis]), axis=2)
     return data
 
