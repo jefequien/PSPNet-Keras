@@ -50,20 +50,28 @@ def DiscDataGenerator(im_list, datasource, category):
         # Training data
         img1 = image_utils.scale(img1, (473,473))
         img1 = image_utils.preprocess_image(img1)
+        img2 = image_utils.scale(img2, (473,473))
+        img2 = image_utils.preprocess_image(img2)
+
         g1 = prep_disc_data(img1, gt1, category)
+        g2 = prep_disc_data(img2, gt2, category)
+        g3 = prep_disc_data(img1, gt1, category) # Duplicate
+        g4 = prep_disc_data(img2, gt2, category) # Duplicate
+
         b1 = prep_disc_data(img1, ap1, category)
-        b2 = prep_disc_data(img1, gt2, category)
-        b3 = prep_disc_data(img1, ap2, category)
-        data = [g1, b1, b2, b3]
-        label = [1, 0, 0, 0]
+        b2 = prep_disc_data(img2, ap2, category)
+        b3 = prep_disc_data(img1, gt2, category)
+        b4 = prep_disc_data(img1, ap2, category)
+        data =  [g1,g2,g3,g4,b1,b2,b3]
+        label = [1, 1, 1, 1, 0, 0, 0]
 
         data = np.stack(data, axis=0)
+        # save(data)
         label = label
-        save(data)
         yield (data, label)
 
 def save(data):
-    import uuid
+    import uuid, h5py
     fname = "vis/tmp/{}.h5".format(uuid.uuid4().hex)
     with h5py.File(fname, 'w') as f:
         f.create_dataset('data', data=data)
