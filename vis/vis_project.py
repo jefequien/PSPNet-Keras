@@ -42,29 +42,26 @@ class ProjectVisualizer:
         rel_path = os.path.relpath(abs_path, root)
         print "http://places.csail.mit.edu/{}".format(rel_path)
 
-    def visualize_images(self, im_list):
+    def visualize_images(self, im_list, category=None):
         for n, line in enumerate(im_list[:self.MAX]):
             print n, line
-            self.add_image_section(line)
+            self.add_image_section(line, category=category)
 
-    def add_image_section(self, line):
+    def add_image_section(self, line, category=None):
         im = line.split()[0]
-        paths = self.image_visualizer.visualize(im)
-
-        # Hack to get order from image_visualizer
-        order = paths["order"]
-        del paths["order"]
-
         image_tags = []
-        path_order1 = ["image", "prob_mask", "category_mask", "ground_truth", "diff"]
-        path_order2 = ["gt_slices", "ap_slices_thresholded", "category_mask"]
-        path_order = path_order1 + path_order2
-        for key in path_order:
-            if key in paths:
-                tag = self.get_image_tag(paths[key])
-                image_tags.append(tag)
-                del paths[key]
-        # Add the rest
+
+        paths = self.image_visualizer.visualize(im)
+        order = np.arange(0,150)
+        if category is None:
+            paths1 = self.image_visualizer.visualize_all_categories(im)
+            paths.update(paths1)
+            order = paths["order"]
+            del paths["order"]
+        else:
+            paths2 = self.image_visualizer.visualize_category(im, category)
+            paths.update(paths2)
+
         for key in paths:
             tag = self.get_image_tag(paths[key])
             image_tags.append(tag)
@@ -150,5 +147,5 @@ if __name__ == "__main__":
         random.shuffle(im_list)
 
     im_list = im_list[args.start:]
-    vis.visualize_images(im_list)
+    vis.visualize_images(im_list, category=args.category)
 

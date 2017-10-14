@@ -61,8 +61,8 @@ if __name__ == "__main__":
             img, _ = datasource.get_image(im)
             gt, _ = datasource.get_ground_truth(im, one_hot=True)
             ap, _ = datasource.get_all_prob(im)
-            pr_prob = disc.predict(img, ap, category)
-            gt_prob = disc.predict(img, gt, category)
+            pr_prob = disc.predict(img, ap, args.category)
+            gt_prob = disc.predict(img, gt, args.category)
             
-            print "{} {} {}".format(im, pr_prob, gt_pred)
-            recorder.save(im,[pr_prob, gt_pred])
+            print "{} {} {}".format(im, pr_prob, gt_prob)
+            recorder.save(im,[pr_prob, gt_prob])

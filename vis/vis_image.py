@@ -5,6 +5,7 @@ import cv2
 import argparse
 import numpy as np
 from scipy import misc
+from collections import OrderedDict
 
 import utils
 from utils.datasource import DataSource
@@ -25,11 +26,9 @@ class ImageVisualizer:
         img, im_path = self.datasource.get_image(im)
         cm, cm_path = self.datasource.get_category_mask(im)
         gt, gt_path = self.datasource.get_ground_truth(im)
-        gt_one_hot, gt_path = self.datasource.get_ground_truth(im, one_hot=True)
         pm, pm_path = self.datasource.get_prob_mask(im)
-        ap, ap_path = self.datasource.get_all_prob(im)
+        paths = OrderedDict()
 
-        paths = {}
         if im is not None:
             paths["image"] = im_path
 
@@ -49,13 +48,17 @@ class ImageVisualizer:
             diff_color, diff_color_path = self.add_color(diff)
             paths["diff"] = diff_color_path
 
-        #
-        # Open slices
-        #
-        order = self.get_order(gt_one_hot, ap)
+        return paths
+
+    def visualize_all_categories(self, im):
+        gt, gt_path = self.datasource.get_ground_truth(im, one_hot=True)
+        ap, ap_path = self.datasource.get_all_prob(im)
+        paths = OrderedDict()
+
+        order = self.get_order(gt, ap)
         paths["order"] = order
-        if gt_one_hot is not None:
-            slices = self.open_slices(gt_one_hot, order, num=20)
+        if gt is not None:
+            slices = self.open_slices(gt, order, num=20)
             slices_path = self.save(slices)
             paths["gt_slices"] = slices_path
 
@@ -68,7 +71,26 @@ class ImageVisualizer:
             slices = self.open_slices(ap, order, num=20)
             slices_path = self.save(slices)
             paths["ap_slices"] = slices_path
+        return paths
 
+    def visualize_category(self, im, category):
+        gt, gt_path = self.datasource.get_ground_truth(im, one_hot=True)
+        ap, ap_path = self.datasource.get_all_prob(im)
+        paths = OrderedDict()
+        
+        if gt is not None:
+            s = gt[category-1]
+            s_path = self.save(s)
+            paths["gt_slice"] = s_path
+        if ap is not None:
+            s = ap[category-1]
+            s = s > 0.5
+            s_path = self.save(s)
+            paths["ap_slice_thresholded"] = s_path
+        if ap is not None:
+            s = ap[category-1]
+            s_path = self.save(s)
+            paths["ap_slice"] = s_path
         return paths
 
     def make_diff(self, cm, gt):

@@ -18,7 +18,7 @@ from disc import Discriminator
 from data_generator import DiscDataGenerator
 
 def train(disc, data_generator, checkpoint_dir, initial_epoch=0):
-    filename = "weights.{epoch:02d}-{loss:.4f}.hdf5"
+    filename = "weights.{epoch:02d}-{loss:.4f}-{acc:.4f}.hdf5"
     checkpoint_path = join(checkpoint_dir, filename)
 
     checkpoint = ModelCheckpoint(checkpoint_path, monitor='loss')
@@ -26,7 +26,7 @@ def train(disc, data_generator, checkpoint_dir, initial_epoch=0):
 
     print("Training...")
     disc.model.fit_generator(data_generator, 1000, epochs=100, callbacks=callbacks_list,
-             verbose=1, workers=6, initial_epoch=initial_epoch)
+             verbose=1, workers=6, use_multiprocessing=True, initial_epoch=initial_epoch)
 
 
 if __name__ == "__main__":
@@ -42,7 +42,7 @@ if __name__ == "__main__":
     environ["CUDA_VISIBLE_DEVICES"] = args.id
 
     # Checkpoint handling
-    checkpoint_name = "{}-{}-{}".format(args.name, args.learning_rate, args.category)
+    checkpoint_name = "{}/{}/{}".format(args.name, args.category, args.learning_rate)
     checkpoint_dir = join("weights", "checkpoints", "disc", checkpoint_name)
     if not isdir(checkpoint_dir):
         makedirs(checkpoint_dir)
