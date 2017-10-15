@@ -56,17 +56,21 @@ def DiscDataGenerator(im_list, datasource, category):
 
         g1 = prepare_disc_data(img1, gt1, category)
         g2 = prepare_disc_data(img2, gt2, category)
-        g3 = prepare_disc_data(img1, gt1, category) # Duplicate
-        g4 = prepare_disc_data(img2, gt2, category) # Duplicate
+        good_data = [g1, g2]
+        good_labels = [np.max(g1[:,:,3]) > 0, np.max(g2[:,:,3] > 0)]
 
         b1 = prepare_disc_data(img1, ap1, category)
-        b2 = prepare_disc_data(img2, ap2, category)
-        b3 = prepare_disc_data(img1, gt2, category)
-        b4 = prepare_disc_data(img1, ap2, category)
-        data =  [g1,g2,g3,g4,b1,b2,b3]
-        label = [1, 1, 1, 1, 0, 0, 0]
+        b2 = prepare_disc_data(img1, gt2, category)
+        b3 = prepare_disc_data(img1, ap2, category)
+        b4 = prepare_disc_data(img2, ap2, category)
+        b5 = prepare_disc_data(img2, gt1, category)
+        b6 = prepare_disc_data(img2, ap1, category)
+        bad_data = [b1,b2,b3,b4,b5,b6]
+        bad_labels = [0, 0, 0, 0, 0, 0]
 
-        data = np.stack(data, axis=0)
+        data = np.stack(good_data + bad_data, axis=0)
+        label = np.array(good_labels + bad_labels)
+        print label
         # save(data)
         label = label
         yield (data, label)
