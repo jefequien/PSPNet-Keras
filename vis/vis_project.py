@@ -52,7 +52,7 @@ class ProjectVisualizer:
         image_tags = []
 
         paths = self.image_visualizer.visualize(im)
-        order = np.arange(0,150)
+        order = np.arange(1,151)
         if category is None:
             paths1 = self.image_visualizer.visualize_all_categories(im)
             paths.update(paths1)

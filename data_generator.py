@@ -77,7 +77,7 @@ def DiscDataGenerator(im_list, datasource, category):
         label = label + bad_label
         data = np.stack(data, axis=0)
         label = np.array(label)
-
+        
         # save(data)
         yield (data, label)
 
