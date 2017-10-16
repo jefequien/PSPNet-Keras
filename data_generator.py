@@ -54,26 +54,42 @@ def DiscDataGenerator(im_list, datasource, category):
         img2 = image_utils.scale(img2, (473,473))
         img2 = image_utils.preprocess_image(img2)
 
-        g1 = prepare_disc_data(img1, gt1, category)
-        g2 = prepare_disc_data(img2, gt2, category)
-        good_data = [g1, g2]
-        good_labels = [np.max(g1[:,:,3]) > 0, np.max(g2[:,:,3] > 0)]
+        d1 = prepare_disc_data(img1, gt1, category)
+        d2 = prepare_disc_data(img1, ap1, category)
+        d3 = prepare_disc_data(img2, gt2, category)
+        d4 = prepare_disc_data(img2, ap2, category)
+        l1 = np.max(d1[:,:,3])
+        l2 = iou(d1[:,:,3], d2[:,:,3])
+        l3 = np.max(d3[:,:,3])
+        l4 = iou(d3[:,:,3], d4[:,:,3])
+        data = [d1, d2, d3, d4]
+        label = [l1, l2, l3, l4]
 
-        b1 = prepare_disc_data(img1, ap1, category)
-        b2 = prepare_disc_data(img1, gt2, category)
-        b3 = prepare_disc_data(img1, ap2, category)
-        b4 = prepare_disc_data(img2, ap2, category)
-        b5 = prepare_disc_data(img2, gt1, category)
-        b6 = prepare_disc_data(img2, ap1, category)
-        bad_data = [b1,b2,b3,b4,b5,b6]
-        bad_labels = [0, 0, 0, 0, 0, 0]
+        # Augment with mismatched data
+        b1 = prepare_disc_data(img1, gt2, category)
+        b2 = prepare_disc_data(img1, ap2, category)
+        b3 = prepare_disc_data(img2, gt1, category)
+        b4 = prepare_disc_data(img2, ap1, category)
+        bad_data = [b1,b2,b3,b4]
+        bad_label = [0, 0, 0, 0]
 
-        data = np.stack(good_data + bad_data, axis=0)
-        label = np.array(good_labels + bad_labels)
-        print label
+        data = data + bad_data
+        label = label + bad_label
+        data = np.stack(data, axis=0)
+        label = np.array(label)
+
         # save(data)
-        label = label
         yield (data, label)
+
+def iou(gt_s, pr_s):
+    intersection = np.logical_and(gt_s, pr_s)
+    union = np.logical_or(gt_s, pr_s)
+    if np.sum(union) != 0:
+        iou = 1.0*np.sum(intersection)/np.sum(union)
+        return iou
+    else:
+        raise Exception("IOU is undefined.")
+
 
 def save(data):
     import uuid, h5py
