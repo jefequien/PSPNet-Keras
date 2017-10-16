@@ -52,7 +52,7 @@ class ProjectVisualizer:
         image_tags = []
 
         paths = self.image_visualizer.visualize(im)
-        order = np.arange(0,150)
+        order = np.arange(1,151)
         if category is None:
             paths1 = self.image_visualizer.visualize_all_categories(im)
             paths.update(paths1)
@@ -118,7 +118,7 @@ if __name__ == "__main__":
     parser.add_argument('-i', '--im_list', type=str, help="Specific image list")
     parser.add_argument('-N', '--number', type=int, default=10, help="Number of images")
     parser.add_argument('-s', '--start', type=int, default=0, help="Number of images")
-    parser.add_argument('-c', '--category', type=int, default=1, help="Category")
+    parser.add_argument('-c', '--category', type=int, help="Category")
     args = parser.parse_args()
 
     # Configuration
