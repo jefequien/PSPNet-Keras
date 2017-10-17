@@ -12,16 +12,22 @@ if not os.path.exists(DIR):
 class Recorder:
 
     def __init__(self, fname, restart=False):
-        self.fname = os.path.join(DIR, fname)
+        if '/' not in fname:
+            fname = os.path.join(DIR, fname)
+        self.fname = fname
+        print "Loading Recorder from", self.fname
         self.record = ValueSortedDict(lambda x: -x[0])
 
         self.write_freq = 10
         
         self.read(restart)
+        self.write()
 
     def read(self, restart):
         if os.path.exists(self.fname):
             for line in open(self.fname, 'r'):
+                line = line.replace('[', '')
+                line = line.replace(']', '')
                 split = line.split()
                 k = split[0]
                 v = [float(e) for e in split[1:]]
@@ -33,6 +39,7 @@ class Recorder:
 
     def save(self, k, v):
         if type(v) is np.ndarray:
+            v = v.flatten()
             v = v.tolist()
         if type(v) is not list:
             v = [v]
@@ -51,7 +58,7 @@ class Recorder:
                 v = [str(e) for e in self.record[k]]
                 line = "{} {}\n".format(k, " ".join(v))
                 f.write(line)
-        self.write_percentiles()
+        #self.write_percentiles()
 
     def write_percentiles(self):
         # write percentiles

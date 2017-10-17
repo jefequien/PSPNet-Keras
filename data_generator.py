@@ -58,10 +58,14 @@ def DiscDataGenerator(im_list, datasource, category):
         d2 = prepare_disc_data(img1, ap1, category)
         d3 = prepare_disc_data(img2, gt2, category)
         d4 = prepare_disc_data(img2, ap2, category)
-        l1 = np.max(d1[:,:,3])
-        l2 = iou(d1[:,:,3], d2[:,:,3])
-        l3 = np.max(d3[:,:,3])
-        l4 = iou(d3[:,:,3], d4[:,:,3])
+        s1 = d1[:,:,3] > 0
+        s2 = d2[:,:,3] > 0
+        s3 = d3[:,:,3] > 0
+        s4 = d4[:,:,3] > 0
+        l1 = np.max(s1)
+        l2 = iou(s1, s2)
+        l3 = np.max(s3)
+        l4 = iou(s4, s4)
         data = [d1, d2, d3, d4]
         label = [l1, l2, l3, l4]
 
@@ -82,13 +86,15 @@ def DiscDataGenerator(im_list, datasource, category):
         yield (data, label)
 
 def iou(gt_s, pr_s):
+    gt_s = gt_s > 0
+    pr_s = pr_s > 0
     intersection = np.logical_and(gt_s, pr_s)
     union = np.logical_or(gt_s, pr_s)
-    if np.sum(union) != 0:
+    if np.sum(union) == 0:
+        return 0
+    else:
         iou = 1.0*np.sum(intersection)/np.sum(union)
         return iou
-    else:
-        raise Exception("IOU is undefined.")
 
 
 def save(data):
