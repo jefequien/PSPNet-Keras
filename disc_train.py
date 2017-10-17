@@ -15,7 +15,7 @@ from utils.datasource import DataSource
 from utils.evaluator import Evaluator
 
 from disc import Discriminator
-from data_generator import DiscDataGenerator
+from data_generator_disc import DiscDataGenerator
 
 def train(disc, data_generator, checkpoint_dir, initial_epoch=0):
     filename = "weights.{epoch:02d}-{loss:.4f}-{acc:.4f}.hdf5"
