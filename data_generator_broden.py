@@ -1,11 +1,12 @@
 import re
 import os
 import numpy
-from scipy.misc import imresize
+from scipy.misc import imresize, imsave
 from PIL import Image
 import cv2
 import loadseg
 import random
+import numpy as np
 
 from data_generator import threadsafe_generator
 
@@ -102,7 +103,12 @@ class DataLayer:
 
     @threadsafe_generator
     def generator(self):
-        yield (data, label)
+        while True:
+            data, label = self.reshape()
+            # Channels last
+            data = np.transpose(data, (0,2,3,1))
+            label = np.transpose(label, (0,2,3,1))
+            yield (data, label)
 
     def reshape(self):
         # load image + label image set
@@ -115,7 +121,7 @@ class DataLayer:
         for i in xrange(len(self.categories)):
             data = full_data[i+1]
             NUM_CLASS = self.categories_num_class[i]
-            print NUM_CLASS, data.shape
+            # print NUM_CLASS, data.shape
             
             l = self.one_hot_encode(data - 1,NUM_CLASS)
             ls.append(l)
@@ -193,4 +199,14 @@ if __name__ == "__main__":
     print data.shape
     print label.shape
     
+    img = data[0]
+    label = label[0]
+    imsave("tmp/img.png", img)
+    for i in range(label.shape[2]):
+        s = label[:,:,i]
+        if np.sum(s) > 0:
+            print i, np.sum(s)
+            imsave("tmp/{}.png".format(i), s)
+    
+        
 
