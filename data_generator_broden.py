@@ -82,7 +82,7 @@ class DataLayer:
                 split=self.split, categories=['image'] + self.categories,
                 segmentation_shape=self.segmentation_shape,
                 batch_size=self.batch_size, randomize=self.random) # ahead=12)
-
+        
         # Now make a blacklist map for blacklisted types
         self.zeromap = {}
         for k, z in self.blacklist.items():
@@ -153,6 +153,8 @@ class DataLayer:
                     # Normalize image with right RGB order and mean
                     batches[c].append(self.normalize_image(record[cat])[flip])
                 else:
+                    label = record[cat]
+                    print np.array(label).shape
                     batches[c].append(self.normalize_label(
                         cat, record[cat], default_shape)[flip])
         return [numpy.stack(b) for b in batches]
