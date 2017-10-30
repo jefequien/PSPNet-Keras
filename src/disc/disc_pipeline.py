@@ -36,7 +36,7 @@ class Pipeline:
 
         self.main_dir = join(CHECKPOINT_DIR, self.name)
 
-    def evaluate(self, category):
+    def evaluate(self, category, train=True):
         print "Evaluting discriminator pipeline for category", category
         evaluated_train = Evaluator("sigmoid_normal3", "ade20k")
         evaluated_val = Evaluator("sigmoid_normal3", "ade20k_val")
@@ -46,9 +46,10 @@ class Pipeline:
         print "Train instances:", len(im_list_train)
         print "Val instances:", len(im_list_val)
 
-        print "Training..."
-        self.train(category, im_list_train)
-        print "Training Done"
+        if train:
+            print "Training..."
+            self.train(category, im_list_train)
+            print "Training Done"
 
         print "Running on validation data"
         output_fn = "{}-ade20k_val.txt".format(category)
@@ -61,12 +62,17 @@ class Pipeline:
         plot.scatterplot(fn_train, evaluated_train, category)
 
     def train(self, category, im_list):
-        disc, epoch = self.get_latest_disc(category)
+        # Load checkpoint
+        checkpoint_dir = "{}/{}/{}".format(self.main_dir, category, self.lr)
+        if not isdir(checkpoint_dir):
+            makedirs(checkpoint_dir)
+        checkpoint, epoch = get_latest_checkpoint(checkpoint_dir)
 
+        # Discriminator and data generator
+        disc = Discriminator(lr=self.lr, checkpoint=checkpoint)
         data_generator = DiscDataGenerator(im_list, self.datasource, category)
 
         # Checkpoint callback
-        checkpoint_dir = "{}/{}/{}".format(self.main_dir, category, self.lr)
         checkpoint_name = "weights.{epoch:02d}-{loss:.4f}-{acc:.4f}.hdf5"
         checkpoint_path = join(checkpoint_dir, checkpoint_name)
         checkpoint = ModelCheckpoint(checkpoint_path, monitor='loss')
@@ -75,7 +81,10 @@ class Pipeline:
                  verbose=1, workers=6, use_multiprocessing=True, initial_epoch=epoch)
 
     def run(self, category, im_list, output_fn="tmp.txt"):
-        disc, _  = self.get_latest_disc(category)
+        # Load checkpoint
+        checkpoint_dir = "{}/{}/{}".format(self.main_dir, category, self.lr)
+        checkpoint, _ = get_latest_checkpoint(checkpoint_dir)
+        disc = Discriminator(lr=self.lr, checkpoint=checkpoint)
 
         output_dir = join(self.main_dir, "predictions")
         output_path = join(output_dir, output_fn)
@@ -97,17 +106,6 @@ class Pipeline:
         recorder.write()
         return output_path
 
-
-    def get_latest_disc(self, category):
-        # Make checkpoint directory
-        checkpoint_dir = "{}/{}/{}".format(self.main_dir, category, self.lr)
-        if not isdir(checkpoint_dir):
-            makedirs(checkpoint_dir)
-        checkpoint, epoch = get_latest_checkpoint(checkpoint_dir)
-        disc = Discriminator(lr=self.lr, checkpoint=checkpoint)
-        return disc, epoch
-
-
 def get_latest_checkpoint(checkpoint_dir):
     # weights.00-1.52.hdf5
     epoch = 0
@@ -120,6 +118,7 @@ def get_latest_checkpoint(checkpoint_dir):
             filename = fn
 
     if filename is None:
+        print "No checkpoints found. ", checkpoint_dir
         return None, epoch
     else:
         return join(checkpoint_dir, filename), epoch
@@ -128,6 +127,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--category', type=int, required=True)
     parser.add_argument('-lr', '--learning_rate', type=float, default=1e-3)
+    parser.add_argument('--no_train', action='store_true', default=False, help="Flag to tell pipeline not to train")
     parser.add_argument('--id', default="0")
     args = parser.parse_args()
 

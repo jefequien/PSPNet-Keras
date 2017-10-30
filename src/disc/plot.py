@@ -13,25 +13,47 @@ from utils.recorder import Recorder
 
 import utils
 
-def scatterplot(recorder_fn, evaluated, category, title=None):
+def plot(recorder_fn, evaluated, category, project):
     recorder = Recorder(recorder_fn)
     im_list = recorder.record.keys()
     scores, gt_scores = get_scores(im_list, recorder)
     ious = get_ious(im_list, evaluated, category)
 
-    if title is None:
-        title = "Discriminator for category {}".format(category)
-
     nonzero = ious > 0
     num_zero = np.count_nonzero(~nonzero)
-    print "Total:", len(scores)
-    print "Zero IOUs: ", num_zero
+    print "Total Instances:", len(scores)
+    print "Instances with zero IOU: ", num_zero
 
     scatter_fn = recorder_fn.replace(".txt", "_scatter.png")
+    scatterplot(ious, scores, category, project, fn=scatter_fn)
+
+    average_fn = recorder_fn.replace(".txt", "_average.png")
+    average_scores(ious, scores, category, project, fn=average_fn)
+
+def average_scores(ious, scores, category, project, fn=None):
+    title = "Averages for category {}, {}".format(category, project)
+    if fn is None:
+        fn = "average.png"
+
+    average_iou = []
+    for i,score in enumerate(scores):
+        a = np.average(ious[:i+1])
+        average_iou.append(a)
+
+    df = pd.DataFrame({'Average IOUs':average_iou, 'Predicted Scores':scores})
+    scatter = ggplot(df,aes(x='Average IOUs',y='Predicted Scores')) + geom_point(alpha = 0.3) + ggtitle(title)
+    scatter.save(fn)
+    print "Plot saved: {}".format(fn)
+
+def scatterplot(ious, scores, category, project, fn=None):
+    title = "Scatterplot for category {}, {}".format(category, project)
+    if fn is None:
+        fn = "scatter.png"
+
     df = pd.DataFrame({'IOUs':ious, 'Predicted Scores':scores})
     scatter = ggplot(df,aes(x='IOUs',y='Predicted Scores')) + geom_point(alpha = 0.3) + ggtitle(title)
-    scatter.save(scatter_fn)
-    print "Plot saved: {}".format(scatter_fn)
+    scatter.save(fn)
+    print "Plot saved: {}".format(fn)
 
 def get_scores(im_list, recorder):
     scores = []
