@@ -28,8 +28,12 @@ class Pipeline:
 
     def __init__(self, name, lr=1e-3):
         config = utils.get_config("ade20k")
+        config = utils.get_config("ade20k")
+        config_val = utils.get_config("ade20k_val")
         config["pspnet_prediction"] = "../../pspnet_prediction/sigmoid_normal3/weights.57/normal/"
+        config_val["pspnet_prediction"] = "../../pspnet_prediction/sigmoid_normal3/weights.57/normal/"
         self.datasource = DataSource(config)
+        self.datasource_val = DataSource(config_val)
 
         self.name = name
         self.lr = lr
@@ -62,6 +66,8 @@ class Pipeline:
         output_fn = "{}-ade20k.txt".format(category)
         fn_train = self.run(category, im_list_train, output_fn=output_fn)
         plot.plot(fn_train, evaluated_train, category, "ade20k")
+
+        plot.vis(fn_val, evaluated_val, category, "ade20k_val", self.datasource_val)
 
     def train(self, category, im_list):
         # Load checkpoint

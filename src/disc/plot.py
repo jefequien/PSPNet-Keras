@@ -13,6 +13,27 @@ from utils.recorder import Recorder
 
 import utils
 
+def vis(recorder_fn, evaluated, category, project, datasource):
+    recorder = Recorder(recorder_fn)
+    im_list = recorder.record.keys()
+    scores, gt_scores = get_scores(im_list, recorder)
+    ious = get_ious(im_list, evaluated, category)
+
+    bad_im_list = []
+    good_im_list = []
+    for i, im in enumerate(im_list):
+        score = scores[i]
+        iou = ious[i]
+        if score < 0.4 and iou < 0.4 and iou > 0.01:
+            bad_im_list.append(im)
+        if score > 0.7 and iou > 0.7:
+            good_im_list.append(im)
+
+    vis = ProjectVisualizer(project, datasource, MAX=10, evaluator=evaluated)
+    vis.visualize_images(short_im_list, category=category)
+    vis.visualize_images(bad_im_list, category=category)
+
+
 def plot(recorder_fn, evaluated, category, project):
     recorder = Recorder(recorder_fn)
     im_list = recorder.record.keys()
@@ -29,6 +50,7 @@ def plot(recorder_fn, evaluated, category, project):
 
     average_fn = recorder_fn.replace(".txt", "_average.png")
     average_scores(ious, scores, category, project, fn=average_fn)
+
 
 def average_scores(ious, scores, category, project, fn=None):
     title = "Averages for category {}, {}".format(category, project)
