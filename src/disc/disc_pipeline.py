@@ -50,6 +50,8 @@ class Pipeline:
             print "Training..."
             self.train(category, im_list_train)
             print "Training Done"
+        else:
+            print "Skipping training"
 
         print "Running on validation data"
         output_fn = "{}-ade20k_val.txt".format(category)
@@ -140,7 +142,7 @@ if __name__ == "__main__":
 
         name = "run1"
         pipeline = Pipeline(name, lr=args.learning_rate)
-        pipeline.evaluate(args.category)
+        pipeline.evaluate(args.category, train=not args.no_train)
 
 
 
