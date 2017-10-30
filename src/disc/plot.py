@@ -39,9 +39,18 @@ def average_scores(ious, scores, category, project, fn=None):
     for i,score in enumerate(scores):
         a = np.average(ious[:i+1])
         average_iou.append(a)
+    average_iou = np.array(average_iou)
 
+    n = len(scores)
     df = pd.DataFrame({'Average IOUs':average_iou, 'Predicted Scores':scores})
-    scatter = ggplot(df,aes(x='Average IOUs',y='Predicted Scores')) + geom_point(alpha = 0.3) + ggtitle(title)
+    df_s = pd.DataFrame({'Average IOUs':average_iou[range(0,n,n/20)], 'Predicted Scores':scores[range(0,n,n/20)]})
+
+    scatter = ggplot(df,aes(x='Average IOUs',y='Predicted Scores')) + geom_point(alpha = 0.3)
+    scatter += geom_point(aes(x='Average IOUs', y='Predicted Scores'), data=df_s, color="red")
+
+    scatter += xlim(0, 1)
+    scatter += ylim(0, 1)
+    scatter += ggtitle(title)
     scatter.save(fn)
     print "Plot saved: {}".format(fn)
 
@@ -52,6 +61,8 @@ def scatterplot(ious, scores, category, project, fn=None):
 
     df = pd.DataFrame({'IOUs':ious, 'Predicted Scores':scores})
     scatter = ggplot(df,aes(x='IOUs',y='Predicted Scores')) + geom_point(alpha = 0.3) + ggtitle(title)
+    scatter += xlim(0, 1)
+    scatter += ylim(0, 1)
     scatter.save(fn)
     print "Plot saved: {}".format(fn)
 

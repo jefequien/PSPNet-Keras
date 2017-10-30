@@ -56,12 +56,12 @@ class Pipeline:
         print "Running on validation data"
         output_fn = "{}-ade20k_val.txt".format(category)
         fn_val = self.run(category, im_list_val, output_fn=output_fn)
-        plot.scatterplot(fn_val, evaluated_val, category)
+        plot.plot(fn_val, evaluated_val, category, "ade20k_val")
 
         print "Running on training data"
         output_fn = "{}-ade20k.txt".format(category)
         fn_train = self.run(category, im_list_train, output_fn=output_fn)
-        plot.scatterplot(fn_train, evaluated_train, category)
+        plot.plot(fn_train, evaluated_train, category, "ade20k")
 
     def train(self, category, im_list):
         # Load checkpoint
@@ -86,7 +86,7 @@ class Pipeline:
         # Load checkpoint
         checkpoint_dir = "{}/{}/{}".format(self.main_dir, category, self.lr)
         checkpoint, _ = get_latest_checkpoint(checkpoint_dir)
-        disc = Discriminator(lr=self.lr, checkpoint=checkpoint)
+        #disc = Discriminator(lr=self.lr, checkpoint=checkpoint)
 
         output_dir = join(self.main_dir, "predictions")
         output_path = join(output_dir, output_fn)
