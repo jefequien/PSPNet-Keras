@@ -5,15 +5,15 @@ import numpy as np
 from sortedcollections import ValueSortedDict
 
 PATH = os.path.dirname(__file__)
-DIR = os.path.join(PATH, "../predictions/disc/")
-if not os.path.exists(DIR):
-    os.makedirs(DIR)
+DIR = os.path.join(PATH, "../../recorder/")
 
 class Recorder:
 
     def __init__(self, fname, restart=False):
         if '/' not in fname:
             fname = os.path.join(DIR, fname)
+        if not os.path.exists(os.path.dirname(fname)):
+            os.makedirs(os.path.dirname(fname))
         self.fname = fname
         print "Loading Recorder from", self.fname
         self.record = ValueSortedDict(lambda x: -x[0])

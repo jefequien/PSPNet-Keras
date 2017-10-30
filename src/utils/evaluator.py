@@ -8,7 +8,7 @@ import utils
 from data import DataSource
 
 PATH = os.path.dirname(__file__)
-DIR = os.path.join(PATH, "../predictions/results/")
+DIR = os.path.join(PATH, "../../pspnet_prediction/evaluation/")
 if not os.path.exists(DIR):
     os.makedirs(DIR)
 
@@ -16,13 +16,13 @@ NUMCLASS = 150
 
 class Evaluator:
 
-    def __init__(self, name, project, datasource):
+    def __init__(self, name, project):
         fname = "{}-{}.h5".format(name, project)
         self.fname = os.path.join(DIR, fname)
         
-        self.datasource = datasource
         # Uses default im_list
-        self.im_list = utils.open_im_list(datasource.config["im_list"])
+        config = utils.get_config(project)
+        self.im_list = utils.open_im_list(config["im_list"])
         self.n = len(self.im_list)
 
         self.save_freq = 10
@@ -50,15 +50,15 @@ class Evaluator:
         results["iou"] = self.iou[i]
         return results
 
-    def evaluate(self):
+    def evaluate(self, datasource):
         for i in xrange(self.n):
             im = self.im_list[i]
             if self.is_evaluated(i):
                 print im, "Done."
             else:
                 im = self.im_list[i]
-                gt, _ = self.datasource.get_ground_truth(im, one_hot=True)
-                ap, _ = self.datasource.get_all_prob(im)
+                gt, _ = datasource.get_ground_truth(im, one_hot=True)
+                ap, _ = datasource.get_all_prob(im)
                 
                 if ap is None:
                     print im, "Not Done."
@@ -141,6 +141,6 @@ if __name__ == "__main__":
     config["pspnet_prediction"] = args.prediction
     datasource = DataSource(config)
 
-    evaluator = Evaluator(args.name, args.project, datasource)
-    evaluator.evaluate()
+    evaluator = Evaluator(args.name, args.project)
+    evaluator.evaluate(datasource)
 

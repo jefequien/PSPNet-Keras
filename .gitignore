@@ -1,3 +1,7 @@
+pspnet_prediction/*
+disc_checkpoints/*
+checkpoints/*
+
 predictions/*
 tmp/*
 

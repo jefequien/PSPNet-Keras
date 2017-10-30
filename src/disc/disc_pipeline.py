@@ -1,6 +1,7 @@
 
 from os.path import splitext, join, isfile, isdir
 from os import environ, makedirs
+import os
 import sys
 import argparse
 import numpy as np
@@ -13,12 +14,13 @@ import tensorflow as tf
 import utils
 from utils.data import DataSource
 from utils.evaluator import Evaluator
+from utils.recorder import Recorder
 
 from disc import Discriminator
 from data_generator_disc import DiscDataGenerator
 import plot
 
-CHECKPOINT_DIR = "../disc_checkpoints/"
+CHECKPOINT_DIR = "../../disc_checkpoints/"
 if not isdir(CHECKPOINT_DIR):
     makedirs(CHECKPOINT_DIR)
 
@@ -26,7 +28,7 @@ class Pipeline:
 
     def __init__(self, name, lr=1e-3):
         config = utils.get_config("ade20k")
-        config["pspnet_prediction"] = "../pspnet_prediction/sigmoid_normal3/weights.57/normal/"
+        config["pspnet_prediction"] = "../../pspnet_prediction/sigmoid_normal3/weights.57/normal/"
         self.datasource = DataSource(config)
 
         self.name = name
@@ -35,10 +37,14 @@ class Pipeline:
         self.main_dir = join(CHECKPOINT_DIR, self.name)
 
     def evaluate(self, category):
-        evaluated_train = Evaluator("sigmoid_normal3", "ade20k", self.datasource)
-        evaluated_val = Evaluator("sigmoid_normal3", "ade20k_val", self.datasource)
+        print "Evaluting discriminator pipeline for category", category
+        evaluated_train = Evaluator("sigmoid_normal3", "ade20k")
+        evaluated_val = Evaluator("sigmoid_normal3", "ade20k_val")
         im_list_train = evaluated_train.get_im_list_by_category(category)
         im_list_val = evaluated_val.get_im_list_by_category(category)
+
+        print "Train instances:", len(im_list_train)
+        print "Val instances:", len(im_list_val)
 
         print "Training..."
         self.train(category, im_list_train)
@@ -55,7 +61,7 @@ class Pipeline:
         plot.scatterplot(fn_train, evaluated_train)
 
     def train(self, category, im_list):
-        disc = self.get_latest_disc(category)
+        disc, epoch = self.get_latest_disc(category)
 
         data_generator = DiscDataGenerator(im_list, self.datasource, category)
 
@@ -66,10 +72,10 @@ class Pipeline:
         checkpoint = ModelCheckpoint(checkpoint_path, monitor='loss')
         callbacks_list = [checkpoint]
         disc.model.fit_generator(data_generator, 1000, epochs=100, callbacks=callbacks_list,
-                 verbose=1, workers=6, use_multiprocessing=True, initial_epoch=epoch)
+                 verbose=1, workers=6, use_multiprocessing=False, initial_epoch=epoch)
 
     def run(self, category, im_list, output_fn="tmp.txt"):
-        disc = self.get_latest_disc(category)
+        disc, _  = self.get_latest_disc(category)
 
         output_dir = join(self.main_dir, "predictions")
         output_path = join(output_dir, output_fn)
@@ -80,9 +86,9 @@ class Pipeline:
                 print im, recorder.get(im), "Done."
                 continue
 
-            img, _ = datasource.get_image(im)
-            gt, _ = datasource.get_ground_truth(im, one_hot=True)
-            ap, _ = datasource.get_all_prob(im)
+            img, _ = self.datasource.get_image(im)
+            gt, _ = self.datasource.get_ground_truth(im, one_hot=True)
+            ap, _ = self.datasource.get_all_prob(im)
             pr_prob = disc.predict(img, ap, args.category)
             gt_prob = disc.predict(img, gt, args.category)
             
@@ -93,12 +99,12 @@ class Pipeline:
 
     def get_latest_disc(self, category):
         # Make checkpoint directory
-        checkpoint_dir = join(self.main_dir, category, self.lr)
+        checkpoint_dir = "{}/{}/{}".format(self.main_dir, category, self.lr)
         if not isdir(checkpoint_dir):
             makedirs(checkpoint_dir)
-        checkpoint, epoch = get_latest_checkpoint(category)
+        checkpoint, epoch = get_latest_checkpoint(checkpoint_dir)
         disc = Discriminator(lr=self.lr, checkpoint=checkpoint)
-        return disc
+        return disc, epoch
 
 
 def get_latest_checkpoint(checkpoint_dir):
@@ -120,7 +126,7 @@ def get_latest_checkpoint(checkpoint_dir):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--category', type=int, required=True)
-    parser.add_argument('-lr', '--learning_rate', type=float, default=1e-4)
+    parser.add_argument('-lr', '--learning_rate', type=float, default=1e-3)
     parser.add_argument('--id', default="0")
     args = parser.parse_args()
 
