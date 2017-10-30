@@ -53,12 +53,12 @@ class Pipeline:
         print "Running on validation data"
         output_fn = "{}-ade20k_val.txt".format(category)
         fn_val = self.run(category, im_list_val, output_fn=output_fn)
-        plot.scatterplot(fn_val, evaluated_val)
+        plot.scatterplot(fn_val, evaluated_val, category)
 
         print "Running on training data"
         output_fn = "{}-ade20k.txt".format(category)
         fn_train = self.run(category, im_list_train, output_fn=output_fn)
-        plot.scatterplot(fn_train, evaluated_train)
+        plot.scatterplot(fn_train, evaluated_train, category)
 
     def train(self, category, im_list):
         disc, epoch = self.get_latest_disc(category)
@@ -66,13 +66,13 @@ class Pipeline:
         data_generator = DiscDataGenerator(im_list, self.datasource, category)
 
         # Checkpoint callback
-        checkpoint_dir = join(self.main_dir, "checkpoints")
+        checkpoint_dir = "{}/{}/{}".format(self.main_dir, category, self.lr)
         checkpoint_name = "weights.{epoch:02d}-{loss:.4f}-{acc:.4f}.hdf5"
         checkpoint_path = join(checkpoint_dir, checkpoint_name)
         checkpoint = ModelCheckpoint(checkpoint_path, monitor='loss')
         callbacks_list = [checkpoint]
         disc.model.fit_generator(data_generator, 1000, epochs=100, callbacks=callbacks_list,
-                 verbose=1, workers=6, use_multiprocessing=False, initial_epoch=epoch)
+                 verbose=1, workers=6, use_multiprocessing=True, initial_epoch=epoch)
 
     def run(self, category, im_list, output_fn="tmp.txt"):
         disc, _  = self.get_latest_disc(category)
@@ -94,6 +94,7 @@ class Pipeline:
             
             print "{} {} {}".format(im, pr_prob, gt_prob)
             recorder.save(im,[pr_prob, gt_prob])
+        recorder.write()
         return output_path
 
 
