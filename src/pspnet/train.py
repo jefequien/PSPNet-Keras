@@ -1,4 +1,3 @@
-
 from os.path import splitext, join, isfile, isdir
 from os import environ, makedirs
 import sys

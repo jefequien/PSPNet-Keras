@@ -51,7 +51,7 @@ def open_im_list(im_list_txt):
     return np.array(im_list)
 
 def get_config(project):
-    with open(os.path.join(PATH, "../../LabelMe/data_config.json"), 'r') as f:
+    with open(os.path.join(PATH, "../../../LabelMe/data_config.json"), 'r') as f:
         data_config = json.load(f)
         if project in data_config:
             return data_config[project]

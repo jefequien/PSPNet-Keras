@@ -5,7 +5,7 @@ import h5py
 import time
 
 import utils
-from datasource import DataSource
+from data import DataSource
 
 PATH = os.path.dirname(__file__)
 DIR = os.path.join(PATH, "../predictions/results/")

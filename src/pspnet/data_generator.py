@@ -1,35 +1,11 @@
 import random
 import time
-import threading
 import numpy as np
 from scipy import misc
 
 import utils
 from utils import image_utils
-from utils.datasource import DataSource
-
-class threadsafe_iter:
-    """Takes an iterator/generator and makes it thread-safe by
-    serializing call to the `next` method of given iterator/generator.
-    """
-    def __init__(self, it):
-        self.it = it
-        self.lock = threading.Lock()
-
-    def __iter__(self):
-        return self
-
-    def next(self):
-        with self.lock:
-            return self.it.next()
-
-
-def threadsafe_generator(f):
-    """A decorator that takes a generator function and makes it thread-safe.
-    """
-    def g(*a, **kw):
-        return threadsafe_iter(f(*a, **kw))
-    return g
+from utils.data import DataSource, threadsafe_generator
 
 @threadsafe_generator
 def DataGenerator(im_list, datasource, maxside=None):

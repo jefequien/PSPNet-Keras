@@ -2,11 +2,10 @@ import random
 import numpy as np
 from scipy import misc
 
-from data_generator import threadsafe_generator
 from disc import prepare_disc_data
 
 from utils import image_utils
-from utils.datasource import DataSource
+from utils.data import DataSource, threadsafe_generator
 
 @threadsafe_generator
 def DiscDataGenerator(im_list, datasource, category):

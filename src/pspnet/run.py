@@ -43,7 +43,7 @@ if __name__ == "__main__":
         random.shuffle(im_list)
 
     # Output directory
-    root_result = "predictions/softmax_default/{}".format(args.scale)
+    root_result = "../predictions/softmax_default/{}".format(args.scale)
     if args.checkpoint is not None:
         model = basename(dirname(args.checkpoint))
         version = basename(args.checkpoint).split('-')[0]

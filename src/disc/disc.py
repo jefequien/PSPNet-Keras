@@ -20,9 +20,8 @@ from keras import backend as K
 from keras.models import Model, load_model
 import tensorflow as tf
 
-import utils
 from utils import image_utils
-from utils.datasource import open_file
+from utils.data import open_file
 
 class Discriminator(object):
     """Discriminator for classes"""
