@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 import utils
-from utils.datasource import DataSource
+from utils.data import DataSource
 from utils.evaluator import Evaluator
 from vis_image import ImageVisualizer
 
@@ -52,7 +52,7 @@ class ProjectVisualizer:
         image_tags = []
 
         paths = self.image_visualizer.visualize(im)
-        order = np.arange(1,151)
+        order = np.arange(0,150)
         if category is None:
             paths1 = self.image_visualizer.visualize_all_categories(im)
             paths.update(paths1)
@@ -89,7 +89,7 @@ class ProjectVisualizer:
             keys.append(key)
             values.append(results[key])
         values = np.stack(values)
-
+        
         sorted_values = values[:,order]
         df = pd.DataFrame(sorted_values, index=keys, columns=order+1)
         html = df.to_html()

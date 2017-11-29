@@ -92,7 +92,7 @@ class Pipeline:
         # Load checkpoint
         checkpoint_dir = "{}/{}/{}".format(self.main_dir, category, self.lr)
         checkpoint, _ = get_latest_checkpoint(checkpoint_dir)
-        #disc = Discriminator(lr=self.lr, checkpoint=checkpoint)
+        disc = Discriminator(lr=self.lr, checkpoint=checkpoint)
 
         output_dir = join(self.main_dir, "predictions")
         output_path = join(output_dir, output_fn)

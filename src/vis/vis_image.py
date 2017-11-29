@@ -8,7 +8,7 @@ from scipy import misc
 from collections import OrderedDict
 
 import utils
-from utils.datasource import DataSource
+from utils.data import DataSource
 
 TMP_DIR = "tmp/"
 IMAGES_DIR = "tmp/images/"

@@ -7,11 +7,12 @@ import matplotlib.pyplot as plt
 from ggplot import *
 import pandas as pd
 
+import utils
 from utils.evaluator import Evaluator
 from utils.data import DataSource
 from utils.recorder import Recorder
 
-import utils
+from vis.vis_project import ProjectVisualizer
 
 def vis(recorder_fn, evaluated, category, project, datasource):
     recorder = Recorder(recorder_fn)
@@ -24,13 +25,14 @@ def vis(recorder_fn, evaluated, category, project, datasource):
     for i, im in enumerate(im_list):
         score = scores[i]
         iou = ious[i]
-        if score < 0.4 and iou < 0.4 and iou > 0.01:
-            bad_im_list.append(im)
-        if score > 0.7 and iou > 0.7:
-            good_im_list.append(im)
+        line = "{} {}".format(im, score)
+        if score > 0.6 and iou < 0.4 and iou > 0.01:
+            bad_im_list.append(line)
+        if score < 0.4 and iou > 0.7:
+            good_im_list.append(line)
 
     vis = ProjectVisualizer(project, datasource, MAX=10, evaluator=evaluated)
-    vis.visualize_images(short_im_list, category=category)
+    vis.visualize_images(good_im_list, category=category)
     vis.visualize_images(bad_im_list, category=category)
 
 
