@@ -17,7 +17,6 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", '--project', type=str, required=True, help="Project name")
-    # parser.add_argument("--prediction", type=str, required=True, help="Project predictions")
     parser.add_argument("-o", '--output', type=str, required=True, help="Output file name")
     args = parser.parse_args()
 
@@ -25,18 +24,19 @@ if __name__ == "__main__":
     im_list = utils.open_im_list(config["im_list"])
     root_allprob = os.path.join(config["pspnet_prediction"], 'all_prob')
     print root_allprob
-
+    
     n = len(im_list)
-    contains_matrix = np.zeros((n, 150))
+    contains_matrix = np.zeros((n, 150), dtype=int)
 
     for i,im in enumerate(im_list):
         print im
 
         fn_allprob = os.path.join(root_allprob, im.replace('.jpg', '.h5'))
         all_prob = open_h5file(fn_allprob)
-        contains = np.max(all_prob > 0.5, axis=2)
-        contains_matrix[i,:] = contains
+        contains = np.amax(all_prob > 0.5, axis=(1,2))
+        contains = contains.astype(int)
         print contains
+        contains_matrix[i,:] = contains
 
     with h5py.File(args.output, 'w') as f:
         f.create_dataset('contains', data=contains_matrix)
