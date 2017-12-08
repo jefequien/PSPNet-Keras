@@ -2,6 +2,7 @@ import os
 import argparse
 import numpy as np
 import h5py
+import pandas as pd
 
 import utils
 
@@ -22,6 +23,9 @@ if __name__ == "__main__":
 
     config = utils.get_config(args.project)
     im_list = utils.open_im_list(config["im_list"])
+    categories = utils.categories
+    #im_list = im_list[:100]
+
     root_allprob = os.path.join(config["pspnet_prediction"], 'all_prob')
     print root_allprob
     
@@ -38,6 +42,8 @@ if __name__ == "__main__":
         print contains
         contains_matrix[i,:] = contains
 
-    with h5py.File(args.output, 'w') as f:
-        f.create_dataset('contains', data=contains_matrix)
+    # Write to output
+    df = pd.DataFrame(contains_matrix, index=im_list, columns=categories)
+    df.to_csv(args.output + ".csv")
+
 
