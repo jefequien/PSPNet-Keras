@@ -40,6 +40,7 @@ def get_categories():
                 categories[int(cat)] = split[4].replace(',','')
         return categories
 categories = get_categories()
+category_list = [categories[i] for i in range(1, len(categories)+1)]
 
 def open_im_list(im_list_txt):
     if ".txt" not in im_list_txt:

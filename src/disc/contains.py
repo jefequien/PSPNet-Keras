@@ -23,7 +23,7 @@ if __name__ == "__main__":
 
     config = utils.get_config(args.project)
     im_list = utils.open_im_list(config["im_list"])
-    categories = utils.categories
+    categories = utils.category_list
     #im_list = im_list[:100]
 
     root_allprob = os.path.join(config["pspnet_prediction"], 'all_prob')
